@@ -94,6 +94,7 @@
         .chat-msg.me .msg-bubble { background: var(--primary-color); color: white; }
         .msg-author { font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: 0.8; }
         .msg-text { font-size: 14px; word-break: break-word; }
+        .msg-text a { color: inherit; text-decoration: underline; font-weight: bold; } /* تنسيق الروابط داخل الشات */
         .msg-img { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 5px; cursor: pointer; display: block; }
         .msg-footer { display: flex; gap: 10px; margin-top: 5px; opacity: 0; transition: opacity 0.2s; }
         .chat-msg:hover .msg-footer { opacity: 0.5; }
@@ -495,6 +496,17 @@
         fetchData();
     }
 
+    // دالة لتحويل الروابط النصية إلى روابط قابلة للضغط مع حماية النظام
+    function linkify(inputText) {
+        let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        let urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        text = text.replace(urlPattern, '<a href="$1" target="_blank" style="color: inherit; text-decoration: underline;">$1</a>');
+        let wwwPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+        text = text.replace(wwwPattern, '$1<a href="http://$2" target="_blank" style="color: inherit; text-decoration: underline;">$2</a>');
+        return text;
+    }
+
+    // Chat Logic
     function renderChat() {
         const c = document.getElementById('chatMessages');
         c.innerHTML = boardData.chat.map(m => {
@@ -515,7 +527,7 @@
                             <button onclick="reactMsg('${m.ID}', '😂')">😂</button>
                         </div>
                         ${!isMe ? `<div class="msg-author">${m.Name} ${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>` : `<div class="msg-author" style="text-align:right;">${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>`}
-                        <div class="msg-text">${m.Text}</div>
+                        <div class="msg-text">${linkify(m.Text)}</div>
                         ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img" onclick="window.open('${m.ImageURL}', '_blank')">` : ''}
                         <div class="msg-reacts">${reactHtml}</div>
                         <div class="msg-footer">
