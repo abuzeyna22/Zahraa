@@ -78,7 +78,7 @@
         /* Tasks Board & Arrows */
         .tasks-view-wrapper { position: relative; height: 100%; }
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; padding-bottom: 20px; height: 100%; overflow-x: auto; scroll-behavior: smooth; }
-        .tasks-grid::-webkit-scrollbar { display: none; } /* Hide scrollbar for cleaner look on mobile */
+        .tasks-grid::-webkit-scrollbar { display: none; }
         .column { width: 280px; flex-shrink: 0; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; }
         .column-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .column-title { font-size: 15px; font-weight: 700; margin: 0; }
@@ -128,6 +128,7 @@
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; margin-bottom: 8px; display: block; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
+        input:disabled, select:disabled, textarea:disabled { opacity: 0.6; cursor: not-allowed; }
         .platforms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         /* Modals */
@@ -143,19 +144,17 @@
         .comment-text { font-size: 13px; margin-top: 4px; }
         .comment-text a { color: var(--primary-color); text-decoration: underline; }
         .details-body a { color: var(--primary-color); font-weight: bold; word-break: break-all; }
+        .creator-badge { background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { position: fixed; right: 0; top: 0; height: 100%; transform: translateX(100%); box-shadow: -5px 0 15px rgba(0,0,0,0.2); width: 250px !important; }
             .sidebar.mobile-open { transform: translateX(0); }
-            .sidebar.collapsed { width: 250px !important; } /* Override desktop collapse on mobile */
+            .sidebar.collapsed { width: 250px !important; }
             .main-content { width: 100%; }
-            
-            /* Show arrows on mobile */
             .nav-arrow { display: flex; }
-            .column { width: 85vw; max-height: 60vh; } /* Column takes most of the screen width */
-            
+            .column { width: 85vw; max-height: 60vh; }
             .chat-msg { max-width: 85%; }
             .topbar { padding: 10px 15px; }
             .view { padding: 15px; }
@@ -360,10 +359,9 @@
         });
     }
 
-    // Function to scroll tasks on mobile
     function scrollTasks(direction) {
         const grid = document.getElementById('tasksGrid');
-        const scrollAmount = window.innerWidth * 0.85; // Scroll by roughly one column width
+        const scrollAmount = window.innerWidth * 0.85;
         grid.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
     }
 
@@ -522,13 +520,49 @@
         if (!t) return;
         document.getElementById('detailsTitle').innerText = t.Title;
         const dl = getDeadlineInfo(t.PublishDate);
+        
+        // التحقق من صلاحية التعديل (الأدمن أو المنشئ)
+        const canEdit = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
+        const disabledAttr = canEdit ? '' : 'disabled';
+        
         let html = `
-            <div class="form-group"><label>النوع:</label><p>${t.Type}</p></div>
-            <div class="form-group"><label>المنصات:</label><p>${t.Platforms}</p></div>
-            <div class="form-group"><label>الوصف:</label><p>${t.Description}</p></div>
-            <div class="form-group"><label>تاريخ النشر:</label><p>${dl.emoji} ${dl.text}</p></div>
-            <div class="form-group"><label>رابط الخامات:</label><a href="${t.RawLink}" target="_blank">${t.RawLink || 'لا يوجد'}</a></div>
-            <div class="form-group"><label>رابط المعاينة:</label><input type="url" id="reviewLinkInput" value="${t.ReviewLink || ''}" placeholder="ضع رابط المعاينة هنا"></div>
+            <div class="creator-badge">
+                <span>👤 أنشأها: <strong>${t.Creator}</strong></span>
+            </div>
+            <div class="form-group">
+                <label>عنوان المهمة</label>
+                <input type="text" id="editTitle" value="${t.Title}" ${disabledAttr}>
+            </div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select id="editType" ${disabledAttr}>
+                    <option value="انشاءات" ${t.Type === 'انشاءات' ? 'selected' : ''}>انشاءات</option>
+                    <option value="ستوري" ${t.Type === 'ستوري' ? 'selected' : ''}>ستوري</option>
+                    <option value="ريل" ${t.Type === 'ريل' ? 'selected' : ''}>ريل</option>
+                    <option value="ريفيو عميل" ${t.Type === 'ريفيو عميل' ? 'selected' : ''}>ريفيو عميل</option>
+                    <option value="أخرى" ${t.Type === 'أخرى' ? 'selected' : ''}>أخرى</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>المنصات</label>
+                <input type="text" id="editPlatforms" value="${t.Platforms}" ${disabledAttr}>
+            </div>
+            <div class="form-group">
+                <label>الوصف</label>
+                <textarea id="editDesc" rows="3" ${disabledAttr}>${t.Description}</textarea>
+            </div>
+            <div class="form-group">
+                <label>تاريخ النشر</label>
+                <input type="date" id="editPublishDate" value="${t.PublishDate ? new Date(t.PublishDate).toISOString().split('T')[0] : ''}" ${disabledAttr}>
+            </div>
+            <div class="form-group">
+                <label>رابط الخامات (Drive)</label>
+                <input type="url" id="editRawLink" value="${t.RawLink || ''}" ${disabledAttr}>
+            </div>
+            <div class="form-group">
+                <label>رابط المعاينة (للمونتير)</label>
+                <input type="url" id="reviewLinkInput" value="${t.ReviewLink || ''}" ${disabledAttr}>
+            </div>
             <hr>
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
@@ -538,6 +572,7 @@
             </div>
         `;
         document.getElementById('detailsBody').innerHTML = html;
+        
         const comments = boardData.comments.filter(c => c.TaskID === taskId);
         document.getElementById('commentsList').innerHTML = comments.map(c => `
             <div class="comment-box">
@@ -550,8 +585,8 @@
         `).join('');
         
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
-        if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
-            actions += `<button class="btn btn-success" onclick="updateLink('${t.ID}')">حفظ رابط المعاينة</button>`;
+        if (canEdit) {
+            actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
         }
         
         const currentCol = STATUS_MAP[t.Status];
@@ -581,26 +616,24 @@
         document.getElementById('detailsModal').style.display = 'flex';
     }
 
-    async function updateLink(taskId) {
-        const link = document.getElementById('reviewLinkInput').value;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskLinks', email: currentUser.Email, password: currentUser.password, taskId: taskId, reviewLink: link}) });
-        alert('تم حفظ الرابط');
+    async function saveTaskDetails(taskId) {
+        const payload = {
+            action: 'updateTaskDetails',
+            email: currentUser.Email,
+            password: currentUser.password,
+            taskId: taskId,
+            title: document.getElementById('editTitle').value,
+            type: document.getElementById('editType').value,
+            platforms: document.getElementById('editPlatforms').value,
+            description: document.getElementById('editDesc').value,
+            publishDate: document.getElementById('editPublishDate').value,
+            rawLink: document.getElementById('editRawLink').value,
+            reviewLink: document.getElementById('reviewLinkInput').value
+        };
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        alert('تم حفظ التعديلات بنجاح');
         fetchData();
-    }
-
-    async function addComment(taskId) {
-        const text = document.getElementById('commentInput').value;
-        if(!text) return;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
-        document.getElementById('commentInput').value = '';
-        fetchData();
-        openDetails(taskId);
-    }
-
-    async function moveTask(taskId, newStatus) {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
         closeModal('detailsModal');
-        fetchData();
     }
 
     function linkify(inputText) {
