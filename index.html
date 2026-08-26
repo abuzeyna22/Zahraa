@@ -101,7 +101,7 @@
         .nav-arrow.right { right: 10px; }
 
         /* Chat */
-        .chat-container { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; background: var(--container-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+        .chat-container { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; background: var(--container-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); position: relative; }
         .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; min-height: 0; }
         .chat-msg { display: flex; gap: 10px; max-width: 70%; position: relative; }
         .chat-msg.me { flex-direction: row-reverse; align-self: flex-end; }
@@ -125,12 +125,12 @@
         .mention { color: var(--primary-color); font-weight: bold; background: rgba(13, 148, 136, 0.1); padding: 0 4px; border-radius: 4px; }
         .chat-msg.me .mention { color: #ffffff; background: rgba(255,255,255,0.2); }
         
-        .chat-input-area { flex-shrink: 0; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; }
+        .chat-input-area { flex-shrink: 0; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; position: relative; }
         .chat-input-area input[type="text"] { flex-grow: 1; margin: 0; }
 
         /* Settings */
         .settings-container { max-width: 600px; margin: 0 auto; background: var(--container-bg); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); }
-        .form-group { margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; position: relative; }
         label { font-weight: 600; margin-bottom: 8px; display: block; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
         input:disabled, select:disabled, textarea:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -159,6 +159,11 @@
         .notif-item { padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
         .notif-item:last-child { border-bottom: none; }
         .notif-time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
+
+        /* Mention Autocomplete Dropdown */
+        .mention-popup { position: absolute; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; display: none; max-height: 150px; overflow-y: auto; width: 200px; bottom: 60px; right: 50px; }
+        .mention-item { padding: 8px 12px; cursor: pointer; font-size: 14px; }
+        .mention-item:hover { background: var(--bg-color); }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -194,6 +199,10 @@
         <div class="error-msg" id="loginError">بيانات الدخول غير صحيحة</div>
     </div>
 </div>
+
+<!-- Mention Popups -->
+<div class="mention-popup" id="mentionPopupChat"></div>
+<div class="mention-popup" id="mentionPopupComment"></div>
 
 <!-- Main App Layout -->
 <div class="sidebar" id="appSidebar" style="display: none;">
@@ -279,7 +288,7 @@
             <div class="chat-input-area">
                 <input type="file" id="chatImgInput" accept="image/*" style="display: none" onchange="uploadChatImage()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('chatImgInput').click()">📷</button>
-                <input type="text" id="chatTextInput" placeholder="اكتب رسالة... (استخدم @ للمنشن)" onkeypress="if(event.key==='Enter') sendChat()">
+                <input type="text" id="chatTextInput" placeholder="اكتب رسالة... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupChat')" onkeypress="if(event.key==='Enter') sendChat()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="sendChat()">➤</button>
             </div>
         </div>
@@ -344,8 +353,7 @@
 </div>
 
 <script>
-    // تأكد أن هذا الرابط يطابق آخر رابط قمت بنسخه من Google Apps Script
-    const API_URL = "https://script.google.com/macros/s/AKfycbw24plmlaVDbQ5TaZL7M9f1nezuY3fLVoeUgTb1SvY17YUM5t2vNq1oqb3ozbbyGBs/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycby6T6Tp29Px_e8-2MmLmQpPeNqk_iFndS4h0ZnbbOM9rU-N6xOzS8IpGnNXWeY4WYU/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -625,7 +633,7 @@
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)">
+                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')">
                 <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
             </div>
         `;
@@ -704,14 +712,14 @@
         if(!text) return;
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
-        await fetchData(); // تم إضافة await
+        await fetchData(); 
         openDetails(taskId);
     }
 
     async function moveTask(taskId, newStatus) {
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
         closeModal('detailsModal');
-        await fetchData(); // تم إضافة await
+        await fetchData(); 
     }
 
     function linkify(inputText) {
@@ -774,6 +782,7 @@
         if(!text) return;
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
         document.getElementById('chatTextInput').value = '';
+        document.getElementById('mentionPopupChat').style.display = 'none';
     }
 
     async function reactMsg(msgId, emoji) {
@@ -878,6 +887,56 @@
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
         boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
         renderNotifications();
+    }
+
+    // Mention Autocomplete Logic
+    function handleMentionInput(inputEl, popupId) {
+        const val = inputEl.value;
+        const lastAtIndex = val.lastIndexOf('@');
+        const popup = document.getElementById(popupId);
+        
+        if (lastAtIndex === -1) {
+            popup.style.display = 'none';
+            return;
+        }
+
+        const textAfterAt = val.substring(lastAtIndex + 1);
+        
+        // Hide if space or enter is pressed
+        if (textAfterAt.includes(' ') || textAfterAt.includes('\n')) {
+            popup.style.display = 'none';
+            return;
+        }
+
+        const matchedUsers = boardData.users.filter(u => 
+            (u.Name && u.Name.includes(textAfterAt)) || 
+            (u.Email && u.Email.includes(textAfterAt))
+        );
+
+        if (matchedUsers.length > 0 && textAfterAt.length > 0) {
+            popup.innerHTML = matchedUsers.map(u => 
+                `<div class="mention-item" onclick="insertMention('${inputEl.id}', '${popupId}', '${u.Name}', ${lastAtIndex})">${u.Name}</div>`
+            ).join('');
+            popup.style.display = 'block';
+        } else if (textAfterAt.length === 0) {
+            // Show all users if just '@' is typed
+            popup.innerHTML = boardData.users.map(u => 
+                `<div class="mention-item" onclick="insertMention('${inputEl.id}', '${popupId}', '${u.Name}', ${lastAtIndex})">${u.Name}</div>`
+            ).join('');
+            popup.style.display = 'block';
+        } else {
+            popup.style.display = 'none';
+        }
+    }
+
+    function insertMention(inputId, popupId, name, atIndex) {
+        const inputEl = document.getElementById(inputId);
+        const val = inputEl.value;
+        inputEl.value = val.substring(0, atIndex + 1) + name + ' ' + val.substring(atIndex + 1);
+        inputEl.focus();
+        document.getElementById(popupId).style.display = 'none';
+        // Move cursor to end
+        inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
     }
 </script>
 
