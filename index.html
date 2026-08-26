@@ -24,15 +24,12 @@
 
         /* Login */
         .login-overlay { display: flex; position: fixed; inset: 0; background: var(--bg-color); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
-        .login-box { background: var(--container-bg); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 350px; text-align: center; }
-        
-        /* Logos Area */
+        .login-box { background: var(--container-bg); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 90%; max-width: 350px; text-align: center; }
         .logos-box { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 25px; padding: 20px; background: var(--logo-box-bg); border-radius: 12px; border: 1px solid var(--border-color); }
         .logos-box .zahraa-logo { height: 65px; object-fit: contain; }
         .flux-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .flux-wrapper .flux-logo { height: 35px; object-fit: contain; background: #ffffff; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
         .flux-credit { font-size: 10px; opacity: 0.6; }
-
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: 'Cairo'; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; font-family: 'Cairo'; background: var(--primary-color); color: white; transition: 0.2s; width: 100%; }
         .btn:hover { opacity: 0.9; }
@@ -40,11 +37,18 @@
         .error-msg { color: var(--danger-color); font-size: 13px; margin-top: 10px; display: none; }
 
         /* Sidebar */
-        .sidebar { width: 250px; background: var(--sidebar-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; transition: 0.4s; }
+        .sidebar { width: 250px; background: var(--sidebar-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; transition: width 0.3s ease, transform 0.3s ease; overflow: hidden; white-space: nowrap; position: relative; z-index: 100; }
+        .sidebar.collapsed { width: 70px; }
+        .sidebar.collapsed .hide-on-collapse { display: none !important; }
+        .sidebar.collapsed .show-on-collapse { display: block !important; }
+        .show-on-collapse { display: none; }
+        .sidebar.collapsed .nav-link { justify-content: center; padding: 15px; }
+        .sidebar.collapsed .user-profile { padding: 15px 5px; }
+        .sidebar.collapsed .sidebar-header { padding: 0 5px 15px; }
+        .sidebar.collapsed .logout-btn { padding: 12px 5px; font-size: 20px; }
         .sidebar-header { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); }
-        .sidebar-header .zahraa-logo { height: 40px; object-fit: contain; }
-        .sidebar-header .flux-logo { height: 28px; object-fit: contain; background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border-color); }
-        
+        .zahraa-logo { height: 40px; object-fit: contain; }
+        .flux-logo { height: 28px; object-fit: contain; background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border-color); }
         .user-profile { padding: 20px; text-align: center; border-bottom: 1px solid var(--border-color); }
         .user-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; background: var(--bg-color); }
         .user-name { font-weight: 700; font-size: 15px; }
@@ -53,11 +57,13 @@
         .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-color); margin-bottom: 5px; transition: 0.2s; }
         .nav-link:hover { background: var(--bg-color); }
         .nav-link.active { background: var(--primary-color); color: white; }
+        .logout-btn { margin: 10px; padding: 12px; }
 
         /* Main Content */
         .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--border-color); background: var(--container-bg); }
-        .topbar h2 { margin: 0; font-size: 20px; }
+        .topbar-left { display: flex; align-items: center; gap: 20px; }
+        .menu-toggle { background: none; border: 1px solid var(--border-color); border-radius: 8px; font-size: 20px; cursor: pointer; color: var(--text-color); padding: 5px 15px; }
         .view { flex-grow: 1; overflow-y: auto; padding: 30px; display: none; }
         .view.active { display: block; }
 
@@ -81,7 +87,7 @@
         .task-card:hover { transform: translateY(-2px); }
         .task-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
         .task-meta { font-size: 12px; opacity: 0.8; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
-        .tag { display: inline-block; background: var(--border-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
+        .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
         /* Chat */
@@ -93,17 +99,20 @@
         .msg-bubble { position: relative; background: var(--bg-color); padding: 10px 15px; border-radius: 12px; max-width: 100%; }
         .chat-msg.me .msg-bubble { background: var(--primary-color); color: white; }
         .msg-author { font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: 0.8; }
+        .msg-time { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: left; }
+        .chat-msg.me .msg-time { text-align: right; }
         .msg-text { font-size: 14px; word-break: break-word; }
-        .msg-text a { color: inherit; text-decoration: underline; font-weight: bold; }
+        .msg-text a { color: var(--primary-color); text-decoration: underline; font-weight: bold; }
+        .chat-msg.me .msg-text a { color: #ffffff; text-decoration: underline; }
         .msg-img { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 5px; cursor: pointer; display: block; }
         .msg-footer { display: flex; gap: 10px; margin-top: 5px; opacity: 0; transition: opacity 0.2s; }
         .chat-msg:hover .msg-footer { opacity: 0.5; }
-        .msg-footer button { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; opacity: 0.8; }
-        .msg-footer button:hover { opacity: 1; }
+        .msg-footer button { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; opacity: 0.8; color: var(--text-color); }
+        .chat-msg.me .msg-footer button { color: white; }
         .react-popup { position: absolute; bottom: 100%; left: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 5px; display: none; gap: 5px; box-shadow: var(--shadow); z-index: 10; }
         .react-popup button { font-size: 16px; background: none; border: none; cursor: pointer; }
         .msg-reacts { margin-top: 5px; font-size: 12px; display: flex; gap: 5px; }
-        .chat-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; }
+        .chat-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); }
         .chat-input-area input[type="text"] { flex-grow: 1; }
 
         /* Settings */
@@ -120,9 +129,27 @@
         .btn-cancel { background: var(--border-color); color: var(--text-color); }
         .btn-success { background: var(--success-color); color: white; }
         .btn-warning { background: var(--warning-color); color: white; }
-        .comment-box { background: var(--bg-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; }
+        .comment-box { background: var(--bg-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border-color); }
         .comment-author { font-size: 12px; font-weight: 700; color: var(--primary-color); }
+        .comment-time { font-size: 10px; opacity: 0.6; }
         .comment-text { font-size: 13px; margin-top: 4px; }
+        .comment-text a { color: var(--primary-color); text-decoration: underline; }
+        .details-body a { color: var(--primary-color); font-weight: bold; word-break: break-all; }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { position: fixed; right: 0; top: 0; height: 100%; transform: translateX(100%); box-shadow: -5px 0 15px rgba(0,0,0,0.2); width: 250px !important; }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar.collapsed { width: 250px !important; } /* Override desktop collapse on mobile */
+            .main-content { width: 100%; }
+            .tasks-grid { flex-direction: column; min-width: 0; }
+            .column { width: 100%; max-height: 500px; }
+            .chat-msg { max-width: 85%; }
+            .topbar { padding: 10px 15px; }
+            .view { padding: 15px; }
+            .modal-content { padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -149,35 +176,41 @@
 <div class="sidebar" id="appSidebar" style="display: none;">
     <div class="sidebar-header">
         <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa" class="zahraa-logo">
-        <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo">
+        <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo hide-on-collapse">
     </div>
     <div class="user-profile">
         <img id="userAvatar" class="user-avatar" src="https://via.placeholder.com/60?text=U">
-        <div class="user-name" id="userName">مستخدم</div>
-        <div class="user-role" id="userRole">زائر</div>
+        <div class="hide-on-collapse">
+            <div class="user-name" id="userName">مستخدم</div>
+            <div class="user-role" id="userRole">زائر</div>
+        </div>
     </div>
     <div class="nav-links">
         <div class="nav-link active" onclick="navigate('dashboard', this)">
-            <span>📊</span> لوحة التحكم
+            <span>📊</span> <span class="hide-on-collapse">لوحة التحكم</span>
         </div>
         <div class="nav-link" onclick="navigate('tasks', this)">
-            <span>📋</span> المهام
+            <span>📋</span> <span class="hide-on-collapse">المهام</span>
         </div>
         <div class="nav-link" onclick="navigate('chat', this)">
-            <span>💬</span> الدردشة
+            <span>💬</span> <span class="hide-on-collapse">الدردشة</span>
         </div>
         <div class="nav-link" onclick="navigate('settings', this)">
-            <span>⚙️</span> الإعدادات
+            <span>⚙️</span> <span class="hide-on-collapse">الإعدادات</span>
         </div>
     </div>
-    <div style="padding: 20px;">
-        <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
-    </div>
+    <button class="btn btn-danger logout-btn" onclick="logout()">
+        <span class="hide-on-collapse">تسجيل الخروج</span>
+        <span class="show-on-collapse">🚪</span>
+    </button>
 </div>
 
 <div class="main-content" id="appMain" style="display: none;">
     <div class="topbar">
-        <h2 id="viewTitle">لوحة التحكم</h2>
+        <div class="topbar-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h2 id="viewTitle" style="margin:0;">لوحة التحكم</h2>
+        </div>
         <button class="btn" style="width: auto; padding: 8px 15px; background: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color);" onclick="toggleDarkMode()" id="darkModeBtn">🌙</button>
     </div>
 
@@ -269,13 +302,13 @@
 <div class="modal-overlay" id="detailsModal">
     <div class="modal-content">
         <h3 id="detailsTitle"></h3>
-        <div id="detailsBody"></div>
+        <div id="detailsBody" class="details-body"></div>
         <div class="modal-actions" id="detailsActions"></div>
     </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwtrfg8fdHeQLL1tpUzLAyh4ZQ8wSIRi4wygUFA6Y9_WcTE_WPhF0XRdy9ciGJ7jCE/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwMDdRgkELmkMxniu9jRlNMDvcc6ttfzFwusx_-zPsyMre4KBBLQaJKSHKqwGv3YCc/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -296,6 +329,22 @@
         document.getElementById('darkModeBtn').innerText = isDark ? '☀️' : '🌙';
     }
 
+    function toggleSidebar() {
+        const sb = document.getElementById('appSidebar');
+        if (window.innerWidth <= 768) {
+            sb.classList.toggle('mobile-open');
+        } else {
+            sb.classList.toggle('collapsed');
+            localStorage.setItem('sbCollapsed', sb.classList.contains('collapsed'));
+        }
+    }
+
+    if (localStorage.getItem('sbCollapsed') === 'true') {
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('appSidebar').classList.add('collapsed');
+        });
+    }
+
     function navigate(viewId, el) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(`view-${viewId}`).classList.add('active');
@@ -303,6 +352,9 @@
         el.classList.add('active');
         const titles = { dashboard: 'لوحة التحكم', tasks: 'المهام', chat: 'الدردشة', settings: 'الإعدادات' };
         document.getElementById('viewTitle').innerText = titles[viewId];
+        if (window.innerWidth <= 768) {
+            document.getElementById('appSidebar').classList.remove('mobile-open');
+        }
     }
 
     async function login(autoEmail, autoPass) {
@@ -361,6 +413,19 @@
         } catch (e) { console.error(e); }
     }
     setInterval(fetchData, 5000);
+
+    function formatTime(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return '';
+        let hours = d.getHours();
+        let mins = d.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours;
+        mins = mins < 10 ? '0' + mins : mins;
+        let day = d.getDate();
+        let month = d.getMonth() + 1;
+        return `${hours}:${mins} - ${day}/${month}`;
+    }
 
     function getDeadlineInfo(deadline) {
         if(!deadline) return { emoji: '', text: 'غير محدد', class: '' };
@@ -452,7 +517,15 @@
         `;
         document.getElementById('detailsBody').innerHTML = html;
         const comments = boardData.comments.filter(c => c.TaskID === taskId);
-        document.getElementById('commentsList').innerHTML = comments.map(c => `<div class="comment-box"><div class="comment-author">${c.Name}</div><div class="comment-text">${c.Text}</div></div>`).join('');
+        document.getElementById('commentsList').innerHTML = comments.map(c => `
+            <div class="comment-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="comment-author">${c.Name}</span>
+                    <span class="comment-time">${formatTime(c.Timestamp)}</span>
+                </div>
+                <div class="comment-text">${linkify(c.Text)}</div>
+            </div>
+        `).join('');
         
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
         if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
@@ -461,29 +534,18 @@
         
         const currentCol = STATUS_MAP[t.Status];
 
-        // ==========================================
-        // صلاحيات المدير (صلاحيات كاملة لنقل المهمة لأي مرحلة)
-        // ==========================================
         if (currentUser.Role === 'Admin') {
             if (currentCol !== 2) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">➡️ قيد التنفيذ</button>`;
             if (currentCol !== 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">➡️ مراجعة الأدمن</button>`;
             if (currentCol !== 4) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">➡️ مراجعة العميل</button>`;
             if (currentCol !== 5) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'معتمد من العميل')">➡️ معتمد من العميل</button>`;
             if (currentCol !== 6) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">✅ تم النشر</button>`;
-        } 
-        // ==========================================
-        // صلاحيات مصطفى (يمكنك تعديلها لاحقاً عند مراجعة الصلاحيات)
-        // ==========================================
-        else if (currentUser.Role === 'Mustafa') {
+        } else if (currentUser.Role === 'Mustafa') {
             if (currentCol < 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">رفع للأدمن</button>`;
             if (currentCol === 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">رفع للعميل</button>`;
             if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
             actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">إعادة للتنفيذ</button>`;
-        } 
-        // ==========================================
-        // صلاحيات العميل (يمكنك تعديلها لاحقاً عند مراجعة الصلاحيات)
-        // ==========================================
-        else if (currentUser.Role === 'Client') {
+        } else if (currentUser.Role === 'Client') {
             if (currentCol === 4) {
                 actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
                 actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
@@ -520,11 +582,12 @@
     }
 
     function linkify(inputText) {
+        if (!inputText) return '';
         let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         let urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-        text = text.replace(urlPattern, '<a href="$1" target="_blank" style="color: inherit; text-decoration: underline;">$1</a>');
+        text = text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
         let wwwPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-        text = text.replace(wwwPattern, '$1<a href="http://$2" target="_blank" style="color: inherit; text-decoration: underline;">$2</a>');
+        text = text.replace(wwwPattern, '$1<a href="http://$2" target="_blank">$2</a>');
         return text;
     }
 
@@ -547,9 +610,10 @@
                             <button onclick="reactMsg('${m.ID}', '🔥')">🔥</button>
                             <button onclick="reactMsg('${m.ID}', '😂')">😂</button>
                         </div>
-                        ${!isMe ? `<div class="msg-author">${m.Name} ${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>` : `<div class="msg-author" style="text-align:right;">${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>`}
+                        ${!isMe ? `<div class="msg-author">${m.Name}</div>` : ''}
                         <div class="msg-text">${linkify(m.Text)}</div>
                         ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img" onclick="window.open('${m.ImageURL}', '_blank')">` : ''}
+                        <div class="msg-time">${formatTime(m.Timestamp)}</div>
                         <div class="msg-reacts">${reactHtml}</div>
                         <div class="msg-footer">
                             <button onclick="toggleReactPopup('${m.ID}')">😀</button>
