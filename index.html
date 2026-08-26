@@ -95,7 +95,8 @@
         .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
-        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 26px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; }
+        /* Navigation Arrows - Hidden by default, visible only on mobile */
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 26px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; }
         .nav-arrow:hover { opacity: 1; }
         .nav-arrow.left { left: 10px; }
         .nav-arrow.right { right: 10px; }
@@ -160,7 +161,7 @@
         .notif-item:last-child { border-bottom: none; }
         .notif-time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
 
-        /* Mention Autocomplete Dropdown (Fixed Positioning) */
+        /* Mention Autocomplete Dropdown */
         .mention-popup { position: absolute; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; display: none; max-height: 150px; overflow-y: auto; width: 100%; min-width: 200px; bottom: 100%; left: 0; margin-bottom: 5px; }
         .mention-item { padding: 8px 12px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--border-color); }
         .mention-item:last-child { border-bottom: none; }
@@ -179,6 +180,7 @@
             .modal-content { padding: 15px; }
             .notif-dropdown { width: 90vw; left: 5vw; }
             .mention-popup { width: 80%; left: 10%; }
+            .nav-arrow { display: flex; } /* Show arrows only on mobile */
         }
     </style>
 </head>
@@ -284,7 +286,6 @@
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
-                <!-- Mention Popup is now inside the input area -->
                 <div class="mention-popup" id="mentionPopupChat"></div>
                 <input type="file" id="chatImgInput" accept="image/*" style="display: none" onchange="uploadChatImage()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('chatImgInput').click()">📷</button>
@@ -353,7 +354,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby6T6Tp29Px_e8-2MmLmQpPeNqk_iFndS4h0ZnbbOM9rU-N6xOzS8IpGnNXWeY4WYU/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw1cws-i_TBb8vfFAAFULBJfEMoVj1fxLge0OztZ2gLjStvsdeTGUOoQFlOzo2MwvI/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -633,7 +634,6 @@
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px;">
-                <!-- Mention Popup is now inside the comment input group -->
                 <div class="mention-popup" id="mentionPopupComment"></div>
                 <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')">
                 <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
@@ -680,6 +680,11 @@
             }
         }
 
+        // Add Delete button for Admin or Creator
+        if (currentUser.Role === 'Admin' || t.Creator === currentUser.Name) {
+            actions += `<button class="btn btn-danger" style="margin-right: auto;" onclick="deleteTask('${t.ID}')">🗑️ حذف المهمة</button>`;
+        }
+
         document.getElementById('detailsActions').innerHTML = actions;
         document.getElementById('detailsModal').style.display = 'flex';
     }
@@ -723,6 +728,14 @@
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
         closeModal('detailsModal');
         await fetchData(); 
+    }
+
+    async function deleteTask(taskId) {
+        if (confirm('هل أنت متأكد من حذف هذه المهمة نهائياً؟')) {
+            await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
+            closeModal('detailsModal');
+            await fetchData();
+        }
     }
 
     function linkify(inputText) {
@@ -892,7 +905,6 @@
         renderNotifications();
     }
 
-    // Mention Autocomplete Logic
     function handleMentionInput(inputEl, popupId) {
         const val = inputEl.value;
         const lastAtIndex = val.lastIndexOf('@');
