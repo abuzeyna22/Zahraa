@@ -62,8 +62,9 @@
 
         /* Main Content */
         .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; height: 100vh; height: 100dvh; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--border-color); background: var(--container-bg); flex-shrink: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--border-color); background: var(--container-bg); flex-shrink: 0; position: relative; }
         .topbar-left { display: flex; align-items: center; gap: 20px; }
+        .topbar-right { display: flex; align-items: center; gap: 15px; }
         .menu-toggle { background: none; border: 1px solid var(--border-color); border-radius: 8px; font-size: 20px; cursor: pointer; color: var(--text-color); padding: 5px 15px; }
         
         .view { flex-grow: 1; overflow-y: auto; padding: 30px; display: none; position: relative; min-height: 0; }
@@ -94,7 +95,6 @@
         .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
-        /* Navigation Arrows - Visible on all sizes, fixed position */
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 26px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; }
         .nav-arrow:hover { opacity: 1; }
         .nav-arrow.left { left: 10px; }
@@ -122,8 +122,9 @@
         .react-popup { position: absolute; bottom: 100%; left: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 5px; display: none; gap: 5px; box-shadow: var(--shadow); z-index: 10; }
         .react-popup button { font-size: 16px; background: none; border: none; cursor: pointer; }
         .msg-reacts { margin-top: 5px; font-size: 12px; display: flex; gap: 5px; }
+        .mention { color: var(--primary-color); font-weight: bold; background: rgba(13, 148, 136, 0.1); padding: 0 4px; border-radius: 4px; } /* Mention Style */
+        .chat-msg.me .mention { color: #ffffff; background: rgba(255,255,255,0.2); }
         
-        /* Chat Input - Fixed with safe area for iOS */
         .chat-input-area { flex-shrink: 0; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; }
         .chat-input-area input[type="text"] { flex-grow: 1; margin: 0; }
 
@@ -150,7 +151,15 @@
         .details-body a { color: var(--primary-color); font-weight: bold; word-break: break-all; }
         .creator-badge { background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
-        /* Mobile Responsive */
+        /* Notifications Bell & Dropdown */
+        .bell-container { position: relative; cursor: pointer; }
+        .bell-btn { background: none; border: 1px solid var(--border-color); border-radius: 8px; font-size: 20px; cursor: pointer; color: var(--text-color); padding: 5px 15px; }
+        .notif-badge { position: absolute; top: -5px; left: -5px; background: var(--danger-color); color: white; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; }
+        .notif-dropdown { position: absolute; top: 55px; left: 0; width: 300px; max-height: 400px; overflow-y: auto; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow); z-index: 999; display: none; flex-direction: column; padding: 10px; }
+        .notif-item { padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
+
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { position: fixed; right: 0; top: 0; height: 100%; transform: translateX(100%); box-shadow: -5px 0 15px rgba(0,0,0,0.2); width: 250px !important; }
@@ -162,6 +171,7 @@
             .topbar { padding: 10px 15px; }
             .view { padding: 15px; }
             .modal-content { padding: 15px; }
+            .notif-dropdown { width: 90vw; left: 5vw; }
         }
     </style>
 </head>
@@ -224,7 +234,16 @@
             <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
             <h2 id="viewTitle" style="margin:0;">لوحة التحكم</h2>
         </div>
-        <button class="btn" style="width: auto; padding: 8px 15px; background: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color);" onclick="toggleDarkMode()" id="darkModeBtn">🌙</button>
+        <div class="topbar-right">
+            <div class="bell-container">
+                <button class="bell-btn" onclick="toggleNotifications()">🔔</button>
+                <span class="notif-badge" id="notifBadge"></span>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div id="notifList"></div>
+                </div>
+            </div>
+            <button class="btn" style="width: auto; padding: 8px 15px; background: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color);" onclick="toggleDarkMode()" id="darkModeBtn">🌙</button>
+        </div>
     </div>
 
     <!-- Dashboard View -->
@@ -260,7 +279,7 @@
             <div class="chat-input-area">
                 <input type="file" id="chatImgInput" accept="image/*" style="display: none" onchange="uploadChatImage()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('chatImgInput').click()">📷</button>
-                <input type="text" id="chatTextInput" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendChat()">
+                <input type="text" id="chatTextInput" placeholder="اكتب رسالة... (استخدم @ للمنشن)" onkeypress="if(event.key==='Enter') sendChat()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="sendChat()">➤</button>
             </div>
         </div>
@@ -325,12 +344,12 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwM02ouigDDkMN7wFtAfKdFZHM43ngAFMY8WpiwUppwYme20n6cX-ap1cX5Jav-xPI/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzLbGvwF724sNyiz2Jwhpfu1R5y-51m3-BW0vdr_c4BFar5Au1_Inx3cRoL8JNyHPs/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
     let currentUser = null;
-    let boardData = { tasks: [], comments: [], chat: [], users: [] };
+    let boardData = { tasks: [], comments: [], chat: [], users: [], notifications: [] };
 
     if (localStorage.getItem('zahraaDark') === 'true') {
         document.body.classList.add('dark-mode');
@@ -339,7 +358,6 @@
         });
     }
 
-    // Fix Mobile Viewport Height for Chat Input
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             document.body.style.height = window.visualViewport.height + 'px';
@@ -369,7 +387,6 @@
         });
     }
 
-    // Smart Scroll: Finds the most centered column and moves to the next/previous
     function scrollTasks(direction) {
         const grid = document.getElementById('tasksGrid');
         const columns = Array.from(grid.querySelectorAll('.column'));
@@ -381,7 +398,6 @@
         let currentIndex = 0;
         let minDistance = Infinity;
         
-        // Find which column is currently closest to the center of the grid
         columns.forEach((col, i) => {
             const colRect = col.getBoundingClientRect();
             const colCenter = colRect.left + (colRect.width / 2);
@@ -465,6 +481,7 @@
                 renderDashboard();
                 renderTasks();
                 renderChat();
+                renderNotifications();
             }
         } catch (e) { console.error(e); }
     }
@@ -607,7 +624,7 @@
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="commentInput" placeholder="اكتب تعليقاً...">
+                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)">
                 <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
             </div>
         `;
@@ -674,6 +691,7 @@
         closeModal('detailsModal');
     }
 
+    // Parse text to highlight links and mentions (@)
     function linkify(inputText) {
         if (!inputText) return '';
         let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -681,6 +699,11 @@
         text = text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
         let wwwPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
         text = text.replace(wwwPattern, '$1<a href="http://$2" target="_blank">$2</a>');
+        
+        // Highlight Mentions (@username or @email)
+        let mentionPattern = /@[\w\u0600-\u06FF.]+/g;
+        text = text.replace(mentionPattern, '<span class="mention">$&</span>');
+        
         return text;
     }
 
@@ -797,6 +820,46 @@
             localStorage.setItem('zahraaUser', JSON.stringify(u));
         }
         location.reload();
+    }
+
+    // Notifications Logic
+    function renderNotifications() {
+        const notifs = boardData.notifications || [];
+        const unreadCount = notifs.filter(n => !n.ID.toString().startsWith('READ_')).length;
+        const badge = document.getElementById('notifBadge');
+        if (unreadCount > 0) {
+            badge.innerText = unreadCount;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        document.getElementById('notifList').innerHTML = notifs.map(n => `
+            <div class="notif-item">
+                ${n.Text}
+                <div class="notif-time">${formatTime(n.Timestamp)}</div>
+            </div>
+        `).join('') || '<div class="empty-state">لا توجد إشعارات</div>';
+    }
+
+    function toggleNotifications() {
+        const dropdown = document.getElementById('notifDropdown');
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        
+        // If opening and there are unread notifications, mark them as read
+        if (dropdown.style.display === 'flex') {
+            const unreadCount = (boardData.notifications || []).filter(n => !n.ID.toString().startsWith('READ_')).length;
+            if (unreadCount > 0) {
+                markNotificationsRead();
+            }
+        }
+    }
+
+    async function markNotificationsRead() {
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
+        // Optimistically update UI
+        boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
+        renderNotifications();
     }
 </script>
 
