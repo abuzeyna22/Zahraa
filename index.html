@@ -122,7 +122,7 @@
         .react-popup { position: absolute; bottom: 100%; left: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 5px; display: none; gap: 5px; box-shadow: var(--shadow); z-index: 10; }
         .react-popup button { font-size: 16px; background: none; border: none; cursor: pointer; }
         .msg-reacts { margin-top: 5px; font-size: 12px; display: flex; gap: 5px; }
-        .mention { color: var(--primary-color); font-weight: bold; background: rgba(13, 148, 136, 0.1); padding: 0 4px; border-radius: 4px; } /* Mention Style */
+        .mention { color: var(--primary-color); font-weight: bold; background: rgba(13, 148, 136, 0.1); padding: 0 4px; border-radius: 4px; }
         .chat-msg.me .mention { color: #ffffff; background: rgba(255,255,255,0.2); }
         
         .chat-input-area { flex-shrink: 0; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; }
@@ -344,6 +344,7 @@
 </div>
 
 <script>
+    // تأكد أن هذا الرابط يطابق آخر رابط قمت بنسخه من Google Apps Script
     const API_URL = "https://script.google.com/macros/s/AKfycbw24plmlaVDbQ5TaZL7M9f1nezuY3fLVoeUgTb1SvY17YUM5t2vNq1oqb3ozbbyGBs/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
@@ -691,7 +692,28 @@
         closeModal('detailsModal');
     }
 
-    // Parse text to highlight links and mentions (@)
+    async function updateLink(taskId) {
+        const link = document.getElementById('reviewLinkInput').value;
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskLinks', email: currentUser.Email, password: currentUser.password, taskId: taskId, reviewLink: link}) });
+        alert('تم حفظ الرابط');
+        await fetchData();
+    }
+
+    async function addComment(taskId) {
+        const text = document.getElementById('commentInput').value;
+        if(!text) return;
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
+        document.getElementById('commentInput').value = '';
+        await fetchData(); // تم إضافة await
+        openDetails(taskId);
+    }
+
+    async function moveTask(taskId, newStatus) {
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
+        closeModal('detailsModal');
+        await fetchData(); // تم إضافة await
+    }
+
     function linkify(inputText) {
         if (!inputText) return '';
         let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -700,7 +722,6 @@
         let wwwPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
         text = text.replace(wwwPattern, '$1<a href="http://$2" target="_blank">$2</a>');
         
-        // Highlight Mentions (@username or @email)
         let mentionPattern = /@[\w\u0600-\u06FF.]+/g;
         text = text.replace(mentionPattern, '<span class="mention">$&</span>');
         
@@ -822,7 +843,6 @@
         location.reload();
     }
 
-    // Notifications Logic
     function renderNotifications() {
         const notifs = boardData.notifications || [];
         const unreadCount = notifs.filter(n => !n.ID.toString().startsWith('READ_')).length;
@@ -846,7 +866,6 @@
         const dropdown = document.getElementById('notifDropdown');
         dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
         
-        // If opening and there are unread notifications, mark them as read
         if (dropdown.style.display === 'flex') {
             const unreadCount = (boardData.notifications || []).filter(n => !n.ID.toString().startsWith('READ_')).length;
             if (unreadCount > 0) {
@@ -857,7 +876,6 @@
 
     async function markNotificationsRead() {
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
-        // Optimistically update UI
         boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
         renderNotifications();
     }
