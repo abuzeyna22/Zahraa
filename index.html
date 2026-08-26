@@ -11,11 +11,13 @@
             --sidebar-bg: #ffffff; --header-color: #0f172a; --border-color: #e2e8f0; --primary-color: #0d9488;
             --danger-color: #ef4444; --success-color: #10b981; --warning-color: #f59e0b;
             --purple-color: #805ad5; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --logo-box-bg: #f8fafc; /* خلفية لإبراز الشعارات */
         }
         .dark-mode {
             --bg-color: #0f172a; --container-bg: #1e293b; --text-color: #cbd5e0;
             --sidebar-bg: #1e293b; --header-color: #f1f5f9; --border-color: #334155; --primary-color: #14b8a6;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --logo-box-bg: #334155; /* خلفية داكنة لإبراز الشعارات في الوضع الليلي */
         }
         * { box-sizing: border-box; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; display: flex; height: 100vh; overflow: hidden; }
@@ -23,8 +25,13 @@
         /* Login */
         .login-overlay { display: flex; position: fixed; inset: 0; background: var(--bg-color); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
         .login-box { background: var(--container-bg); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 350px; text-align: center; }
-        .logos { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 20px; }
-        .logos img { height: 50px; object-fit: contain; }
+        
+        /* Logos Area */
+        .logos-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; padding: 20px; background: var(--logo-box-bg); border-radius: 12px; border: 1px solid var(--border-color); }
+        .logos-box .zahraa-logo { height: 60px; object-fit: contain; }
+        .logos-box .flux-logo { height: 25px; object-fit: contain; opacity: 0.8; }
+        .flux-credit { font-size: 10px; opacity: 0.6; margin-top: -5px; }
+
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: 'Cairo'; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; font-family: 'Cairo'; background: var(--primary-color); color: white; transition: 0.2s; width: 100%; }
         .btn:hover { opacity: 0.9; }
@@ -33,8 +40,10 @@
 
         /* Sidebar */
         .sidebar { width: 250px; background: var(--sidebar-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; transition: 0.4s; }
-        .sidebar-header { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); }
-        .sidebar-header img { height: 30px; }
+        .sidebar-header { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header .zahraa-logo { height: 35px; object-fit: contain; }
+        .sidebar-header .flux-logo { height: 18px; object-fit: contain; opacity: 0.7; }
+        
         .user-profile { padding: 20px; text-align: center; border-bottom: 1px solid var(--border-color); }
         .user-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; background: var(--bg-color); }
         .user-name { font-weight: 700; font-size: 15px; }
@@ -43,7 +52,6 @@
         .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-color); margin-bottom: 5px; transition: 0.2s; }
         .nav-link:hover { background: var(--bg-color); }
         .nav-link.active { background: var(--primary-color); color: white; }
-        .nav-link svg { width: 20px; height: 20px; }
 
         /* Main Content */
         .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -59,7 +67,6 @@
         .stat-card .value { font-size: 28px; font-weight: 800; color: var(--primary-color); }
         .urgent-list { background: var(--container-bg); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); }
         .urgent-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .urgent-item:last-child { border-bottom: none; }
 
         /* Tasks Board */
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; padding-bottom: 20px; }
@@ -81,15 +88,18 @@
         .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         .chat-msg { display: flex; gap: 10px; max-width: 70%; position: relative; }
         .chat-msg.me { flex-direction: row-reverse; align-self: flex-end; }
-        .chat-msg img.avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        .msg-content { background: var(--bg-color); padding: 10px 15px; border-radius: 12px; position: relative; }
-        .chat-msg.me .msg-content { background: var(--primary-color); color: white; }
+        .chat-msg img.avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .msg-bubble { position: relative; background: var(--bg-color); padding: 10px 15px; border-radius: 12px; max-width: 100%; }
+        .chat-msg.me .msg-bubble { background: var(--primary-color); color: white; }
         .msg-author { font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: 0.8; }
         .msg-text { font-size: 14px; word-break: break-word; }
-        .msg-img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
-        .msg-actions { position: absolute; top: -15px; left: 10px; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2px 5px; display: none; gap: 5px; box-shadow: var(--shadow); z-index: 10; }
-        .chat-msg:hover .msg-actions { display: flex; }
-        .msg-action-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 0 2px; }
+        .msg-img { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 5px; cursor: pointer; display: block; }
+        .msg-footer { display: flex; gap: 10px; margin-top: 5px; opacity: 0; transition: opacity 0.2s; }
+        .chat-msg:hover .msg-footer { opacity: 0.5; }
+        .msg-footer button { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; opacity: 0.8; }
+        .msg-footer button:hover { opacity: 1; }
+        .react-popup { position: absolute; bottom: 100%; left: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 5px; display: none; gap: 5px; box-shadow: var(--shadow); z-index: 10; }
+        .react-popup button { font-size: 16px; background: none; border: none; cursor: pointer; }
         .msg-reacts { margin-top: 5px; font-size: 12px; display: flex; gap: 5px; }
         .chat-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; }
         .chat-input-area input[type="text"] { flex-grow: 1; }
@@ -117,9 +127,10 @@
 <!-- Login Screen -->
 <div class="login-overlay" id="loginScreen">
     <div class="login-box">
-        <div class="logos">
-            <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa">
-            <img src="https://iili.io/CD6dcqg.png" alt="Flux">
+        <div class="logos-box">
+            <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa" class="zahraa-logo">
+            <span class="flux-credit">Powered by</span>
+            <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo">
         </div>
         <h3 style="margin-top: 0;">بوابة المهام</h3>
         <input type="email" id="emailInput" class="login-input" placeholder="البريد الإلكتروني">
@@ -132,8 +143,8 @@
 <!-- Main App Layout -->
 <div class="sidebar" id="appSidebar" style="display: none;">
     <div class="sidebar-header">
-        <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa">
-        <span>إدارة البوابة</span>
+        <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa" class="zahraa-logo">
+        <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo">
     </div>
     <div class="user-profile">
         <img id="userAvatar" class="user-avatar" src="https://via.placeholder.com/60?text=U">
@@ -141,16 +152,16 @@
         <div class="user-role" id="userRole">زائر</div>
     </div>
     <div class="nav-links">
-        <div class="nav-link active" onclick="navigate('dashboard')">
+        <div class="nav-link active" onclick="navigate('dashboard', this)">
             <span>📊</span> لوحة التحكم
         </div>
-        <div class="nav-link" onclick="navigate('tasks')">
+        <div class="nav-link" onclick="navigate('tasks', this)">
             <span>📋</span> المهام
         </div>
-        <div class="nav-link" onclick="navigate('chat')">
+        <div class="nav-link" onclick="navigate('chat', this)">
             <span>💬</span> الدردشة
         </div>
-        <div class="nav-link" onclick="navigate('settings')">
+        <div class="nav-link" onclick="navigate('settings', this)">
             <span>⚙️</span> الإعدادات
         </div>
     </div>
@@ -162,7 +173,7 @@
 <div class="main-content" id="appMain" style="display: none;">
     <div class="topbar">
         <h2 id="viewTitle">لوحة التحكم</h2>
-        <button class="btn" style="width: auto; padding: 8px 15px; background: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color);" onclick="toggleDarkMode()">🌙/☀️</button>
+        <button class="btn" style="width: auto; padding: 8px 15px; background: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color);" onclick="toggleDarkMode()" id="darkModeBtn">🌙</button>
     </div>
 
     <!-- Dashboard View -->
@@ -266,25 +277,33 @@
     let currentUser = null;
     let boardData = { tasks: [], comments: [], chat: [], users: [] };
 
+    // Apply Dark Mode instantly on page load
+    if (localStorage.getItem('zahraaDark') === 'true') {
+        document.body.classList.add('dark-mode');
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('darkModeBtn').innerText = '☀️';
+        });
+    }
+
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
-        localStorage.setItem('zahraaDark', document.body.classList.contains('dark-mode'));
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('zahraaDark', isDark);
+        document.getElementById('darkModeBtn').innerText = isDark ? '☀️' : '🌙';
     }
-    if (localStorage.getItem('zahraaDark') === 'true') document.body.classList.add('dark-mode');
 
-    function navigate(viewId) {
+    function navigate(viewId, el) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(`view-${viewId}`).classList.add('active');
         document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        
+        el.classList.add('active');
         const titles = { dashboard: 'لوحة التحكم', tasks: 'المهام', chat: 'الدردشة', settings: 'الإعدادات' };
         document.getElementById('viewTitle').innerText = titles[viewId];
     }
 
-    async function login() {
-        const email = document.getElementById('emailInput').value;
-        const pass = document.getElementById('passInput').value;
+    async function login(autoEmail, autoPass) {
+        const email = autoEmail || document.getElementById('emailInput').value;
+        const pass = autoPass || document.getElementById('passInput').value;
         document.getElementById('loginError').style.display = 'none';
         try {
             const res = await fetch(`${API_URL}?action=login&email=${email}&password=${pass}`);
@@ -292,6 +311,7 @@
             if (data.status === 'success') {
                 currentUser = data.user;
                 currentUser.password = pass;
+                localStorage.setItem('zahraaUser', JSON.stringify({ email: email, password: pass }));
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appSidebar').style.display = 'flex';
                 document.getElementById('appMain').style.display = 'flex';
@@ -303,7 +323,19 @@
         } catch (e) { document.getElementById('loginError').style.display = 'block'; }
     }
 
-    function logout() { location.reload(); }
+    // Auto Login on page load
+    window.onload = function() {
+        const savedUser = localStorage.getItem('zahraaUser');
+        if (savedUser) {
+            const u = JSON.parse(savedUser);
+            login(u.email, u.password);
+        }
+    };
+
+    function logout() {
+        localStorage.removeItem('zahraaUser');
+        location.reload();
+    }
 
     function initUserUI() {
         document.getElementById('userName').innerText = currentUser.Name;
@@ -341,7 +373,6 @@
     function renderDashboard() {
         const stats = [0,0,0,0,0,0];
         let urgentHtml = '';
-
         boardData.tasks.forEach(t => {
             const colNum = STATUS_MAP[t.Status] || 1;
             stats[colNum-1]++;
@@ -350,19 +381,14 @@
                 urgentHtml += `<div class="urgent-item"><div><strong>${t.Title}</strong><br><small>👤 ${t.Creator}</small></div><div style="text-align: left;"><span style="font-size: 20px;">${dl.emoji}</span><br><small>${dl.text}</small></div></div>`;
             }
         });
-
         const stages = ["محتوى مطلوب", "قيد التنفيذ", "مراجعة الأدمن", "مراجعة العميل", "معتمد من العميل", "تم النشر"];
-        document.getElementById('statsGrid').innerHTML = stages.map((s, i) => 
-            `<div class="stat-card"><h4>${s}</h4><div class="value">${stats[i]}</div></div>`
-        ).join('');
-        
+        document.getElementById('statsGrid').innerHTML = stages.map((s, i) => `<div class="stat-card"><h4>${s}</h4><div class="value">${stats[i]}</div></div>`).join('');
         document.getElementById('urgentList').innerHTML = urgentHtml || '<div class="empty-state">لا توجد مهام عاجلة حالياً</div>';
     }
 
     function renderTasks() {
         for (let i = 1; i <= 6; i++) document.getElementById(`col-${i}`).innerHTML = '';
         const counts = [0,0,0,0,0,0];
-
         boardData.tasks.forEach(t => {
             const colNum = STATUS_MAP[t.Status] || 1;
             counts[colNum-1]++;
@@ -379,7 +405,6 @@
             `;
             document.getElementById(`col-${colNum}`).appendChild(card);
         });
-
         for (let i = 1; i <= 6; i++) {
             if (counts[i-1] === 0) document.getElementById(`col-${i}`).innerHTML = '<div class="empty-state">لا توجد مهام</div>';
             document.getElementById(`count-${i}`).innerText = counts[i-1];
@@ -407,7 +432,6 @@
         if (!t) return;
         document.getElementById('detailsTitle').innerText = t.Title;
         const dl = getDeadlineInfo(t.PublishDate);
-        
         let html = `
             <div class="form-group"><label>النوع:</label><p>${t.Type}</p></div>
             <div class="form-group"><label>المنصات:</label><p>${t.Platforms}</p></div>
@@ -424,15 +448,12 @@
             </div>
         `;
         document.getElementById('detailsBody').innerHTML = html;
-
         const comments = boardData.comments.filter(c => c.TaskID === taskId);
         document.getElementById('commentsList').innerHTML = comments.map(c => `<div class="comment-box"><div class="comment-author">${c.Name}</div><div class="comment-text">${c.Text}</div></div>`).join('');
-
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
         if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
             actions += `<button class="btn btn-success" onclick="updateLink('${t.ID}')">حفظ رابط المعاينة</button>`;
         }
-        
         const currentCol = STATUS_MAP[t.Status];
         if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
             if (currentCol < 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">رفع للأدمن</button>`;
@@ -447,7 +468,6 @@
         if (currentUser.Role === 'Client' && currentCol === 5) {
             actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
         }
-
         document.getElementById('detailsActions').innerHTML = actions;
         document.getElementById('detailsModal').style.display = 'flex';
     }
@@ -483,25 +503,36 @@
             const avatar = sender.Avatar || 'https://via.placeholder.com/35?text=U';
             const reacts = JSON.parse(m.Reactions || "{}");
             let reactHtml = Object.entries(reacts).map(([email, emoji]) => emoji).join(" ");
-            let reactBtns = ["👍", "❤️", "🔥", "😂"].map(emoji => `<button class="msg-action-btn" onclick="reactMsg('${m.ID}', '${emoji}')">${emoji}</button>`).join("");
             
             return `
                 <div class="chat-msg ${isMe ? 'me' : ''}">
                     <img src="${avatar}" class="avatar">
-                    <div class="msg-content">
-                        <div class="msg-actions">
-                            ${reactBtns}
-                            ${isMe ? `<button class="msg-action-btn" onclick="editMsg('${m.ID}')">✏️</button>` : ''}
+                    <div class="msg-bubble">
+                        <div id="react-popup-${m.ID}" class="react-popup">
+                            <button onclick="reactMsg('${m.ID}', '👍')">👍</button>
+                            <button onclick="reactMsg('${m.ID}', '❤️')">❤️</button>
+                            <button onclick="reactMsg('${m.ID}', '🔥')">🔥</button>
+                            <button onclick="reactMsg('${m.ID}', '😂')">😂</button>
                         </div>
                         ${!isMe ? `<div class="msg-author">${m.Name} ${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>` : `<div class="msg-author" style="text-align:right;">${m.Edited === 'Yes' ? '(معدلة)' : ''}</div>`}
                         <div class="msg-text">${m.Text}</div>
-                        ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img">` : ''}
+                        ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img" onclick="window.open('${m.ImageURL}', '_blank')">` : ''}
                         <div class="msg-reacts">${reactHtml}</div>
+                        <div class="msg-footer">
+                            <button onclick="toggleReactPopup('${m.ID}')">😀</button>
+                            ${isMe ? `<button onclick="editMsg('${m.ID}')">✏️</button>` : ''}
+                        </div>
                     </div>
                 </div>
             `;
         }).join("");
         c.scrollTop = c.scrollHeight;
+    }
+
+    function toggleReactPopup(msgId) {
+        document.querySelectorAll('.react-popup').forEach(p => { if(p.id !== `react-popup-${msgId}`) p.style.display = 'none'; });
+        const popup = document.getElementById(`react-popup-${msgId}`);
+        popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
     }
 
     async function sendChat() {
@@ -513,6 +544,7 @@
 
     async function reactMsg(msgId, emoji) {
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
+        toggleReactPopup(msgId);
     }
 
     function editMsg(msgId) {
@@ -569,7 +601,12 @@
             newPassword: newPass || "", avatarUrl: window.tempAvatar || ""
         };
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
-        alert('تم تحديث الملف الشخصي. يرجى تسجيل الدخول مرة أخرى لتجديد الجلسة.');
+        alert('تم تحديث الملف الشخصي بنجاح.');
+        if(newPass) {
+            let u = JSON.parse(localStorage.getItem('zahraaUser'));
+            u.password = newPass;
+            localStorage.setItem('zahraaUser', JSON.stringify(u));
+        }
         location.reload();
     }
 </script>
