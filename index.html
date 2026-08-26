@@ -11,13 +11,13 @@
             --sidebar-bg: #ffffff; --header-color: #0f172a; --border-color: #e2e8f0; --primary-color: #0d9488;
             --danger-color: #ef4444; --success-color: #10b981; --warning-color: #f59e0b;
             --purple-color: #805ad5; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --logo-box-bg: #f8fafc; /* خلفية لإبراز الشعارات */
+            --logo-box-bg: #f8fafc; 
         }
         .dark-mode {
             --bg-color: #0f172a; --container-bg: #1e293b; --text-color: #cbd5e0;
             --sidebar-bg: #1e293b; --header-color: #f1f5f9; --border-color: #334155; --primary-color: #14b8a6;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            --logo-box-bg: #334155; /* خلفية داكنة لإبراز الشعارات في الوضع الليلي */
+            --logo-box-bg: #334155; 
         }
         * { box-sizing: border-box; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; display: flex; height: 100vh; overflow: hidden; }
@@ -27,10 +27,11 @@
         .login-box { background: var(--container-bg); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 350px; text-align: center; }
         
         /* Logos Area */
-        .logos-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; padding: 20px; background: var(--logo-box-bg); border-radius: 12px; border: 1px solid var(--border-color); }
-        .logos-box .zahraa-logo { height: 60px; object-fit: contain; }
-        .logos-box .flux-logo { height: 25px; object-fit: contain; opacity: 0.8; }
-        .flux-credit { font-size: 10px; opacity: 0.6; margin-top: -5px; }
+        .logos-box { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 25px; padding: 20px; background: var(--logo-box-bg); border-radius: 12px; border: 1px solid var(--border-color); }
+        .logos-box .zahraa-logo { height: 65px; object-fit: contain; }
+        .flux-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .flux-wrapper .flux-logo { height: 35px; object-fit: contain; background: #ffffff; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
+        .flux-credit { font-size: 10px; opacity: 0.6; }
 
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: 'Cairo'; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; font-family: 'Cairo'; background: var(--primary-color); color: white; transition: 0.2s; width: 100%; }
@@ -40,9 +41,9 @@
 
         /* Sidebar */
         .sidebar { width: 250px; background: var(--sidebar-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; transition: 0.4s; }
-        .sidebar-header { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); }
-        .sidebar-header .zahraa-logo { height: 35px; object-fit: contain; }
-        .sidebar-header .flux-logo { height: 18px; object-fit: contain; opacity: 0.7; }
+        .sidebar-header { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header .zahraa-logo { height: 40px; object-fit: contain; }
+        .sidebar-header .flux-logo { height: 28px; object-fit: contain; background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border-color); }
         
         .user-profile { padding: 20px; text-align: center; border-bottom: 1px solid var(--border-color); }
         .user-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; background: var(--bg-color); }
@@ -129,8 +130,10 @@
     <div class="login-box">
         <div class="logos-box">
             <img src="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png" alt="Zahraa" class="zahraa-logo">
-            <span class="flux-credit">Powered by</span>
-            <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo">
+            <div class="flux-wrapper">
+                <span class="flux-credit">Powered by</span>
+                <img src="https://iili.io/CD6dcqg.png" alt="Flux" class="flux-logo">
+            </div>
         </div>
         <h3 style="margin-top: 0;">بوابة المهام</h3>
         <input type="email" id="emailInput" class="login-input" placeholder="البريد الإلكتروني">
@@ -277,7 +280,6 @@
     let currentUser = null;
     let boardData = { tasks: [], comments: [], chat: [], users: [] };
 
-    // Apply Dark Mode instantly on page load
     if (localStorage.getItem('zahraaDark') === 'true') {
         document.body.classList.add('dark-mode');
         document.addEventListener('DOMContentLoaded', () => {
@@ -323,7 +325,6 @@
         } catch (e) { document.getElementById('loginError').style.display = 'block'; }
     }
 
-    // Auto Login on page load
     window.onload = function() {
         const savedUser = localStorage.getItem('zahraaUser');
         if (savedUser) {
@@ -494,7 +495,6 @@
         fetchData();
     }
 
-    // Chat Logic
     function renderChat() {
         const c = document.getElementById('chatMessages');
         c.innerHTML = boardData.chat.map(m => {
@@ -573,7 +573,6 @@
         };
     }
 
-    // Settings Logic
     async function uploadAvatar() {
         const file = document.getElementById('avatarInput').files[0];
         if (!file) return;
