@@ -160,9 +160,10 @@
         .notif-item:last-child { border-bottom: none; }
         .notif-time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
 
-        /* Mention Autocomplete Dropdown */
-        .mention-popup { position: absolute; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; display: none; max-height: 150px; overflow-y: auto; width: 200px; bottom: 60px; right: 50px; }
-        .mention-item { padding: 8px 12px; cursor: pointer; font-size: 14px; }
+        /* Mention Autocomplete Dropdown (Fixed Positioning) */
+        .mention-popup { position: absolute; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; display: none; max-height: 150px; overflow-y: auto; width: 100%; min-width: 200px; bottom: 100%; left: 0; margin-bottom: 5px; }
+        .mention-item { padding: 8px 12px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--border-color); }
+        .mention-item:last-child { border-bottom: none; }
         .mention-item:hover { background: var(--bg-color); }
 
         @media (max-width: 768px) {
@@ -177,6 +178,7 @@
             .view { padding: 15px; }
             .modal-content { padding: 15px; }
             .notif-dropdown { width: 90vw; left: 5vw; }
+            .mention-popup { width: 80%; left: 10%; }
         }
     </style>
 </head>
@@ -199,10 +201,6 @@
         <div class="error-msg" id="loginError">بيانات الدخول غير صحيحة</div>
     </div>
 </div>
-
-<!-- Mention Popups -->
-<div class="mention-popup" id="mentionPopupChat"></div>
-<div class="mention-popup" id="mentionPopupComment"></div>
 
 <!-- Main App Layout -->
 <div class="sidebar" id="appSidebar" style="display: none;">
@@ -286,6 +284,8 @@
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
+                <!-- Mention Popup is now inside the input area -->
+                <div class="mention-popup" id="mentionPopupChat"></div>
                 <input type="file" id="chatImgInput" accept="image/*" style="display: none" onchange="uploadChatImage()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('chatImgInput').click()">📷</button>
                 <input type="text" id="chatTextInput" placeholder="اكتب رسالة... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupChat')" onkeypress="if(event.key==='Enter') sendChat()">
@@ -633,6 +633,8 @@
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px;">
+                <!-- Mention Popup is now inside the comment input group -->
+                <div class="mention-popup" id="mentionPopupComment"></div>
                 <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')">
                 <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
             </div>
@@ -712,6 +714,7 @@
         if(!text) return;
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
+        document.getElementById('mentionPopupComment').style.display = 'none';
         await fetchData(); 
         openDetails(taskId);
     }
@@ -902,7 +905,6 @@
 
         const textAfterAt = val.substring(lastAtIndex + 1);
         
-        // Hide if space or enter is pressed
         if (textAfterAt.includes(' ') || textAfterAt.includes('\n')) {
             popup.style.display = 'none';
             return;
@@ -919,7 +921,6 @@
             ).join('');
             popup.style.display = 'block';
         } else if (textAfterAt.length === 0) {
-            // Show all users if just '@' is typed
             popup.innerHTML = boardData.users.map(u => 
                 `<div class="mention-item" onclick="insertMention('${inputEl.id}', '${popupId}', '${u.Name}', ${lastAtIndex})">${u.Name}</div>`
             ).join('');
@@ -935,7 +936,6 @@
         inputEl.value = val.substring(0, atIndex + 1) + name + ' ' + val.substring(atIndex + 1);
         inputEl.focus();
         document.getElementById(popupId).style.display = 'none';
-        // Move cursor to end
         inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
     }
 </script>
