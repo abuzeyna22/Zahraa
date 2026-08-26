@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>بوابة الزهراء للتطوير العقاري</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -20,7 +20,8 @@
             --logo-box-bg: #334155; 
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; display: flex; height: 100vh; overflow: hidden; }
+        /* استخدام dvh لحل مشكلة لوحة مفاتيح الموبايل */
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
         input, textarea { touch-action: manipulation; }
 
         /* Login */
@@ -61,7 +62,7 @@
         .logout-btn { margin: 10px; padding: 12px; }
 
         /* Main Content */
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; height: 100vh; height: 100dvh; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--border-color); background: var(--container-bg); flex-shrink: 0; }
         .topbar-left { display: flex; align-items: center; gap: 20px; }
         .menu-toggle { background: none; border: 1px solid var(--border-color); border-radius: 8px; font-size: 20px; cursor: pointer; color: var(--text-color); padding: 5px 15px; }
@@ -77,7 +78,7 @@
         .urgent-list { background: var(--container-bg); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); }
         .urgent-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
 
-        /* Tasks Board & Arrows */
+        /* Tasks Board */
         .tasks-view-wrapper { position: relative; height: 100%; flex-grow: 1; }
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; padding-bottom: 20px; height: 100%; overflow-x: auto; scroll-behavior: smooth; }
         .tasks-grid::-webkit-scrollbar { display: none; }
@@ -94,7 +95,8 @@
         .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
-        .nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 60; box-shadow: var(--shadow); display: none; align-items: center; justify-content: center; opacity: 0.9; }
+        /* Navigation Arrows - Fixed on Mobile */
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 1000; box-shadow: var(--shadow); display: none; align-items: center; justify-content: center; opacity: 0.9; }
         .nav-arrow:hover { opacity: 1; }
         .nav-arrow.left { left: 5px; }
         .nav-arrow.right { right: 5px; }
@@ -122,7 +124,8 @@
         .react-popup button { font-size: 16px; background: none; border: none; cursor: pointer; }
         .msg-reacts { margin-top: 5px; font-size: 12px; display: flex; gap: 5px; }
         
-        .chat-input-area { flex-shrink: 0; padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; }
+        /* Chat Input - Fixed with safe area for iOS */
+        .chat-input-area { flex-shrink: 0; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; background: var(--container-bg); z-index: 50; }
         .chat-input-area input[type="text"] { flex-grow: 1; margin: 0; }
 
         /* Settings */
@@ -237,8 +240,6 @@
     <!-- Tasks View -->
     <div class="view" id="view-tasks" style="padding: 15px;">
         <div class="tasks-view-wrapper">
-            <button class="nav-arrow left" onclick="scrollTasks(1)">‹</button>
-            <button class="nav-arrow right" onclick="scrollTasks(-1)">›</button>
             <div class="tasks-grid" id="tasksGrid">
                 <div class="column"><div class="column-header"><h3 class="column-title">محتوى مطلوب</h3><span class="count-badge" id="count-1">0</span></div><div class="column-content" id="col-1"></div></div>
                 <div class="column"><div class="column-header"><h3 class="column-title">قيد التنفيذ</h3><span class="count-badge" id="count-2">0</span></div><div class="column-content" id="col-2"></div></div>
@@ -248,6 +249,8 @@
                 <div class="column"><div class="column-header"><h3 class="column-title">تم النشر</h3><span class="count-badge" id="count-6">0</span></div><div class="column-content" id="col-6"></div></div>
             </div>
         </div>
+        <button class="nav-arrow left" onclick="scrollTasks(1)">‹</button>
+        <button class="nav-arrow right" onclick="scrollTasks(-1)">›</button>
         <button class="fab" onclick="openTaskModal()" id="fabAdd">+</button>
     </div>
 
@@ -258,7 +261,7 @@
             <div class="chat-input-area">
                 <input type="file" id="chatImgInput" accept="image/*" style="display: none" onchange="uploadChatImage()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('chatImgInput').click()">📷</button>
-                <input type="text" id="chatTextInput" placeholder="اكتب رسالة..." onfocus="this.scrollIntoView()" onkeypress="if(event.key==='Enter') sendChat()">
+                <input type="text" id="chatTextInput" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendChat()">
                 <button class="btn" style="width: auto; padding: 10px;" onclick="sendChat()">➤</button>
             </div>
         </div>
@@ -360,13 +363,10 @@
         });
     }
 
-    // Updated function to scroll tasks using scrollIntoView for reliability
     function scrollTasks(direction) {
         const grid = document.getElementById('tasksGrid');
         const columns = grid.querySelectorAll('.column');
         let currentVisibleIndex = 0;
-        
-        // Find the currently most visible column
         const gridRect = grid.getBoundingClientRect();
         for(let i = 0; i < columns.length; i++) {
             const colRect = columns[i].getBoundingClientRect();
@@ -375,11 +375,9 @@
                 break;
             }
         }
-
         let nextIndex = currentVisibleIndex + direction;
         if (nextIndex < 0) nextIndex = 0;
         if (nextIndex >= columns.length) nextIndex = columns.length - 1;
-
         if(columns[nextIndex]) {
             columns[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
@@ -539,12 +537,10 @@
         const t = boardData.tasks.find(x => x.ID === taskId);
         if (!t) return;
         document.getElementById('detailsTitle').innerText = t.Title;
-        const dl = getDeadlineInfo(t.PublishDate);
         
         const canEdit = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
         const disabledAttr = canEdit ? '' : 'disabled';
         
-        // Format platforms checkboxes
         const platformsArray = t.Platforms ? t.Platforms.split(',').map(p => p.trim()) : [];
         const platformOptions = ["فيسبوك", "انستجرام", "يوتيوب", "تيك توك", "الويبسايت", "أخرى"];
         const platformsHtml = `<div class="platforms-grid">${platformOptions.map(p => `
@@ -643,17 +639,12 @@
     }
 
     async function saveTaskDetails(taskId) {
-        // Get selected platforms as comma-separated string
         const selectedPlatforms = Array.from(document.querySelectorAll('.edit-platform-cb:checked')).map(c => c.value);
-        
         const payload = {
-            action: 'updateTaskDetails',
-            email: currentUser.Email,
-            password: currentUser.password,
-            taskId: taskId,
+            action: 'updateTaskDetails', email: currentUser.Email, password: currentUser.password, taskId: taskId,
             title: document.getElementById('editTitle').value,
             type: document.getElementById('editType').value,
-            platforms: selectedPlatforms.join(', '), // Send as string
+            platforms: selectedPlatforms.join(', '),
             description: document.getElementById('editDesc').value,
             publishDate: document.getElementById('editPublishDate').value,
             rawLink: document.getElementById('editRawLink').value,
