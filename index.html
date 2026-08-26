@@ -94,7 +94,7 @@
         .chat-msg.me .msg-bubble { background: var(--primary-color); color: white; }
         .msg-author { font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: 0.8; }
         .msg-text { font-size: 14px; word-break: break-word; }
-        .msg-text a { color: inherit; text-decoration: underline; font-weight: bold; } /* تنسيق الروابط داخل الشات */
+        .msg-text a { color: inherit; text-decoration: underline; font-weight: bold; }
         .msg-img { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 5px; cursor: pointer; display: block; }
         .msg-footer { display: flex; gap: 10px; margin-top: 5px; opacity: 0; transition: opacity 0.2s; }
         .chat-msg:hover .msg-footer { opacity: 0.5; }
@@ -116,9 +116,10 @@
         /* Modals */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: var(--container-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
         .btn-cancel { background: var(--border-color); color: var(--text-color); }
         .btn-success { background: var(--success-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: white; }
         .comment-box { background: var(--bg-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; }
         .comment-author { font-size: 12px; font-weight: 700; color: var(--primary-color); }
         .comment-text { font-size: 13px; margin-top: 4px; }
@@ -274,7 +275,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwMDdRgkELmkMxniu9jRlNMDvcc6ttfzFwusx_-zPsyMre4KBBLQaJKSHKqwGv3YCc/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwMDdRgkELmkMxniu9jRlNMDvcc6ttfzFwusx_-zPsyMre4KBBLQaJKSHKqwGv3YCc.exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -452,24 +453,46 @@
         document.getElementById('detailsBody').innerHTML = html;
         const comments = boardData.comments.filter(c => c.TaskID === taskId);
         document.getElementById('commentsList').innerHTML = comments.map(c => `<div class="comment-box"><div class="comment-author">${c.Name}</div><div class="comment-text">${c.Text}</div></div>`).join('');
+        
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
         if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
             actions += `<button class="btn btn-success" onclick="updateLink('${t.ID}')">حفظ رابط المعاينة</button>`;
         }
+        
         const currentCol = STATUS_MAP[t.Status];
-        if (currentUser.Role === 'Admin' || currentUser.Role === 'Mustafa') {
+
+        // ==========================================
+        // صلاحيات المدير (صلاحيات كاملة لنقل المهمة لأي مرحلة)
+        // ==========================================
+        if (currentUser.Role === 'Admin') {
+            if (currentCol !== 2) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">➡️ قيد التنفيذ</button>`;
+            if (currentCol !== 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">➡️ مراجعة الأدمن</button>`;
+            if (currentCol !== 4) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">➡️ مراجعة العميل</button>`;
+            if (currentCol !== 5) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'معتمد من العميل')">➡️ معتمد من العميل</button>`;
+            if (currentCol !== 6) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">✅ تم النشر</button>`;
+        } 
+        // ==========================================
+        // صلاحيات مصطفى (يمكنك تعديلها لاحقاً عند مراجعة الصلاحيات)
+        // ==========================================
+        else if (currentUser.Role === 'Mustafa') {
             if (currentCol < 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">رفع للأدمن</button>`;
             if (currentCol === 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">رفع للعميل</button>`;
             if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
-            actions += `<button class="btn" style="background:var(--warning-color); color:white;" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">إعادة للتنفيذ</button>`;
+            actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">إعادة للتنفيذ</button>`;
+        } 
+        // ==========================================
+        // صلاحيات العميل (يمكنك تعديلها لاحقاً عند مراجعة الصلاحيات)
+        // ==========================================
+        else if (currentUser.Role === 'Client') {
+            if (currentCol === 4) {
+                actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
+                actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
+            }
+            if (currentCol === 5) {
+                actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
+            }
         }
-        if (currentUser.Role === 'Client' && currentCol === 4) {
-            actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
-            actions += `<button class="btn" style="background:var(--warning-color); color:white;" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
-        }
-        if (currentUser.Role === 'Client' && currentCol === 5) {
-            actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
-        }
+
         document.getElementById('detailsActions').innerHTML = actions;
         document.getElementById('detailsModal').style.display = 'flex';
     }
@@ -496,7 +519,6 @@
         fetchData();
     }
 
-    // دالة لتحويل الروابط النصية إلى روابط قابلة للضغط مع حماية النظام
     function linkify(inputText) {
         let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         let urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
@@ -506,7 +528,6 @@
         return text;
     }
 
-    // Chat Logic
     function renderChat() {
         const c = document.getElementById('chatMessages');
         c.innerHTML = boardData.chat.map(m => {
