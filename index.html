@@ -95,7 +95,6 @@
         .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
-        /* Navigation Arrows - Hidden by default, visible only on mobile */
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 26px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; }
         .nav-arrow:hover { opacity: 1; }
         .nav-arrow.left { left: 10px; }
@@ -136,6 +135,7 @@
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
         input:disabled, select:disabled, textarea:disabled { opacity: 0.6; cursor: not-allowed; }
         .platforms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .link-row { display: flex; gap: 10px; align-items: center; }
 
         /* Modals */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
@@ -149,6 +149,7 @@
         .comment-time { font-size: 10px; opacity: 0.6; }
         .comment-text { font-size: 13px; margin-top: 4px; }
         .comment-text a { color: var(--primary-color); text-decoration: underline; }
+        .comment-img { max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px; margin-top: 8px; cursor: pointer; display: block; }
         .details-body a { color: var(--primary-color); font-weight: bold; word-break: break-all; }
         .creator-badge { background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
@@ -180,7 +181,7 @@
             .modal-content { padding: 15px; }
             .notif-dropdown { width: 90vw; left: 5vw; }
             .mention-popup { width: 80%; left: 10%; }
-            .nav-arrow { display: flex; } /* Show arrows only on mobile */
+            .nav-arrow { display: flex; } 
         }
     </style>
 </head>
@@ -354,7 +355,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbw1cws-i_TBb8vfFAAFULBJfEMoVj1fxLge0OztZ2gLjStvsdeTGUOoQFlOzo2MwvI/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxF47Adu8mtNtlHnx_dkzvExcqUH-fXNWnACZx51vWnNjX7uqYmVKB2W9uPAdoh4Tg/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -583,8 +584,10 @@
         if (!t) return;
         document.getElementById('detailsTitle').innerText = t.Title;
         
-        const canEdit = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
-        const disabledAttr = canEdit ? '' : 'disabled';
+        const canEditDetails = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
+        const canDeliverWork = (canEditDetails || currentUser.Role === 'Mustafa');
+        const disabledAttr = canEditDetails ? '' : 'disabled';
+        const disabledReviewAttr = canDeliverWork ? '' : 'disabled';
         
         const platformsArray = t.Platforms ? t.Platforms.split(',').map(p => p.trim()) : [];
         const platformOptions = ["فيسبوك", "انستجرام", "يوتيوب", "تيك توك", "الويبسايت", "أخرى"];
@@ -624,18 +627,26 @@
             </div>
             <div class="form-group">
                 <label>رابط الخامات (Drive)</label>
-                <input type="url" id="editRawLink" value="${t.RawLink || ''}" ${disabledAttr}>
+                <div class="link-row">
+                    <input type="url" id="editRawLink" value="${t.RawLink || ''}" ${disabledAttr} style="flex-grow: 1; margin: 0;">
+                    ${t.RawLink ? `<a href="${t.RawLink}" target="_blank" class="btn" style="width: auto; padding: 10px; text-decoration: none; white-space: nowrap;">فتح 🔗</a>` : ''}
+                </div>
             </div>
             <div class="form-group">
-                <label>رابط المعاينة (للمونتير)</label>
-                <input type="url" id="reviewLinkInput" value="${t.ReviewLink || ''}" ${disabledAttr}>
+                <label>رابط العمل النهائي / المعاينة</label>
+                <div class="link-row">
+                    <input type="url" id="reviewLinkInput" value="${t.ReviewLink || ''}" ${disabledReviewAttr} style="flex-grow: 1; margin: 0;">
+                    ${t.ReviewLink ? `<a href="${t.ReviewLink}" target="_blank" class="btn" style="width: auto; padding: 10px; text-decoration: none; white-space: nowrap;">فتح 🔗</a>` : ''}
+                </div>
             </div>
             <hr>
             <h4>التعليقات</h4>
             <div id="commentsList"></div>
-            <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px;">
+            <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
                 <div class="mention-popup" id="mentionPopupComment"></div>
-                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')">
+                <input type="file" id="commentImgInput" accept="image/*" style="display: none" onchange="uploadCommentImage('${t.ID}')">
+                <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('commentImgInput').click()">📷</button>
+                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')" style="flex-grow: 1; margin: 0;">
                 <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
             </div>
         `;
@@ -649,12 +660,15 @@
                     <span class="comment-time">${formatTime(c.Timestamp)}</span>
                 </div>
                 <div class="comment-text">${linkify(c.Text)}</div>
+                ${c.ImageURL ? `<img src="${c.ImageURL}" class="comment-img" onclick="window.open('${c.ImageURL}', '_blank')">` : ''}
             </div>
         `).join('');
         
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
-        if (canEdit) {
+        if (canEditDetails) {
             actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
+        } else if (canDeliverWork) {
+            actions += `<button class="btn btn-success" onclick="updateLink('${t.ID}')">📤 تسليم رابط العمل</button>`;
         }
         
         const currentCol = STATUS_MAP[t.Status];
@@ -680,7 +694,6 @@
             }
         }
 
-        // Add Delete button for Admin or Creator
         if (currentUser.Role === 'Admin' || t.Creator === currentUser.Name) {
             actions += `<button class="btn btn-danger" style="margin-right: auto;" onclick="deleteTask('${t.ID}')">🗑️ حذف المهمة</button>`;
         }
@@ -710,7 +723,7 @@
     async function updateLink(taskId) {
         const link = document.getElementById('reviewLinkInput').value;
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskLinks', email: currentUser.Email, password: currentUser.password, taskId: taskId, reviewLink: link}) });
-        alert('تم حفظ الرابط');
+        alert('تم تسليم رابط العمل بنجاح');
         await fetchData();
     }
 
@@ -722,6 +735,28 @@
         document.getElementById('mentionPopupComment').style.display = 'none';
         await fetchData(); 
         openDetails(taskId);
+    }
+
+    async function uploadCommentImage(taskId) {
+        const file = document.getElementById('commentImgInput').files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = async () => {
+            const formData = new FormData();
+            formData.append("key", IMG_API_KEY);
+            formData.append("image", reader.result.split(',')[1]);
+            try {
+                const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
+                const data = await res.json();
+                if (data.data.url) {
+                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
+                    document.getElementById('commentImgInput').value = '';
+                    await fetchData(); 
+                    openDetails(taskId); // Re-open to show new image comment
+                }
+            } catch (e) { alert("فشل رفع الصورة"); }
+        };
     }
 
     async function moveTask(taskId, newStatus) {
