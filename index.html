@@ -364,7 +364,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxUoMTsqiT2YLplM_2BhPfyk_Xd0Tiyp7jIT3HXU45L5WIkEAbJXQNBGCLupDcALi4/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwQtQZFX70epUlIQwzhhfq9NRtBaeVwowcRW3VJz5e8ANY0gKmPr3-PCK3u_kDtERY/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -615,7 +615,7 @@
         document.getElementById('detailsTitle').innerText = t.Title;
         
         const canEditDetails = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
-        const canDeliverWork = (canEditDetails || currentUser.Role === 'Mustafa'); // السماح لمصطفى برفع الصور والروابط
+        const canDeliverWork = (canEditDetails || currentUser.Role === 'Mustafa'); 
         const disabledAttr = canEditDetails ? '' : 'disabled';
         
         const platformsArray = t.Platforms ? t.Platforms.split(',').map(p => p.trim()) : [];
@@ -802,6 +802,7 @@
                         action: 'updateDeliveryImages', email: currentUser.Email, password: currentUser.password, taskId: taskId, deliveryImages: deliveryImages
                     }) });
                     document.getElementById('deliveryImgInput').value = '';
+                    await new Promise(r => setTimeout(r, 1000)); 
                     await fetchData();
                     openDetails(taskId);
                 }
@@ -818,6 +819,7 @@
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({
             action: 'updateDeliveryImages', email: currentUser.Email, password: currentUser.password, taskId: taskId, deliveryImages: deliveryImages
         }) });
+        await new Promise(r => setTimeout(r, 1000));
         await fetchData();
         openDetails(taskId);
     }
@@ -828,6 +830,7 @@
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
         document.getElementById('mentionPopupComment').style.display = 'none';
+        await new Promise(r => setTimeout(r, 1000));
         await fetchData(); 
         openDetails(taskId);
     }
@@ -847,6 +850,7 @@
                 if (data.data.url) {
                     await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
                     document.getElementById('commentImgInput').value = '';
+                    await new Promise(r => setTimeout(r, 1000));
                     await fetchData(); 
                     openDetails(taskId); 
                 }
@@ -857,6 +861,7 @@
     async function moveTask(taskId, newStatus) {
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
         closeModal('detailsModal');
+        await new Promise(r => setTimeout(r, 1000));
         await fetchData(); 
     }
 
@@ -864,6 +869,7 @@
         if (confirm('هل أنت متأكد من حذف هذه المهمة نهائياً؟')) {
             await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
             closeModal('detailsModal');
+            await new Promise(r => setTimeout(r, 1000));
             await fetchData();
         }
     }
