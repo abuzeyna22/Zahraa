@@ -504,7 +504,9 @@
     function getDeadlineInfo(deadline) {
         if(!deadline) return { emoji: '', text: 'غير محدد', class: '' };
         const today = new Date(); today.setHours(0,0,0,0);
-        const d = new Date(deadline); d.setHours(0,0,0,0);
+        const d = new Date(deadline); 
+        if (isNaN(d)) return { emoji: '', text: 'غير محدد', class: '' };
+        d.setHours(0,0,0,0);
         const diff = Math.round((d - today) / (1000 * 60 * 60 * 24));
         if (diff < 0) return { emoji: '🔴', text: `متأخر (${d.toLocaleDateString('ar-EG')})`, class: 'late' };
         if (diff === 0) return { emoji: '⏰', text: 'اليوم!', class: 'today' };
@@ -582,109 +584,123 @@
     }
 
     function openDetails(taskId) {
-        const t = boardData.tasks.find(x => x.ID === taskId);
-        if (!t) return;
-        document.getElementById('detailsTitle').innerText = t.Title;
-        
-        const canEditDetails = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
-        const disabledAttr = canEditDetails ? '' : 'disabled';
-        
-        const platformsArray = t.Platforms ? t.Platforms.split(',').map(p => p.trim()) : [];
-        const platformOptions = ["فيسبوك", "انستجرام", "يوتيوب", "تيك توك", "الويبسايت", "أخرى"];
-        const platformsHtml = `<div class="platforms-grid">${platformOptions.map(p => `
-            <label><input type="checkbox" class="edit-platform-cb" value="${p}" ${platformsArray.includes(p) ? 'checked' : ''} ${disabledAttr}> ${p}</label>
-        `).join('')}</div>`;
-        
-        let rawLinks = t.RawLinks || []; 
-        let reviewLinks = t.ReviewLinks || [];
-        
-        let html = `
-            <div class="creator-badge"><span>👤 أنشأها: <strong>${t.Creator}</strong></span></div>
-            <div class="form-group"><label>عنوان المهمة</label><input type="text" id="editTitle" value="${t.Title}" ${disabledAttr}></div>
-            <div class="form-group"><label>النوع</label>
-                <select id="editType" ${disabledAttr}>
-                    <option value="انشاءات" ${t.Type === 'انشاءات' ? 'selected' : ''}>انشاءات</option>
-                    <option value="ستوري" ${t.Type === 'ستوري' ? 'selected' : ''}>ستوري</option>
-                    <option value="ريل" ${t.Type === 'ريل' ? 'selected' : ''}>ريل</option>
-                    <option value="ريفيو عميل" ${t.Type === 'ريفيو عميل' ? 'selected' : ''}>ريفيو عميل</option>
-                    <option value="أخرى" ${t.Type === 'أخرى' ? 'selected' : ''}>أخرى</option>
-                </select>
-            </div>
-            <div class="form-group"><label>المنصات</label>${platformsHtml}</div>
-            <div class="form-group"><label>الوصف</label><textarea id="editDesc" rows="3" ${disabledAttr}>${t.Description}</textarea></div>
-            <div class="form-group"><label>تاريخ النشر</label><input type="date" id="editPublishDate" value="${t.PublishDate ? new Date(t.PublishDate).toISOString().split('T')[0] : ''}" ${disabledAttr}></div>
+        try {
+            const t = boardData.tasks.find(x => x.ID === taskId);
+            if (!t) return;
+            document.getElementById('detailsTitle').innerText = t.Title || "بدون عنوان";
             
-            <div class="form-group"><label>روابط الخامات (Drive)</label>
-                <div id="editRawLinksContainer"></div>
-                ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editRawLinksContainer', 'editRawLinkInput')">+ إضافة رابط خامات</button>` : ''}
-            </div>
-            <div class="form-group"><label>روابط العمل النهائي / المعاينة</label>
-                <div id="editReviewLinksContainer"></div>
-                ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editReviewLinksContainer', 'editReviewLinkInput')">+ إضافة رابط معاينة</button>` : ''}
-            </div>
+            const canEditDetails = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
+            const disabledAttr = canEditDetails ? '' : 'disabled';
             
-            <hr>
-            <h4>التعليقات</h4>
-            <div id="commentsList"></div>
-            <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
-                <div class="mention-popup" id="mentionPopupComment"></div>
-                <input type="file" id="commentImgInput" accept="image/*" style="display: none" onchange="uploadCommentImage('${t.ID}')">
-                <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('commentImgInput').click()">📷</button>
-                <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')" style="flex-grow: 1; margin: 0;">
-                <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
-            </div>
-        `;
-        document.getElementById('detailsBody').innerHTML = html;
-        
-        const rawContainer = document.getElementById('editRawLinksContainer');
-        rawLinks.forEach(link => addLinkField('editRawLinksContainer', 'editRawLinkInput', link));
-        if(rawLinks.length === 0 && canEditDetails) addLinkField('editRawLinksContainer', 'editRawLinkInput');
-        
-        const reviewContainer = document.getElementById('editReviewLinksContainer');
-        reviewLinks.forEach(link => addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link));
-        if(reviewLinks.length === 0 && canEditDetails) addLinkField('editReviewLinksContainer', 'editReviewLinkInput');
-        
-        const comments = boardData.comments.filter(c => c.TaskID === taskId);
-        document.getElementById('commentsList').innerHTML = comments.map(c => `
-            <div class="comment-box">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="comment-author">${c.Name}</span>
-                    <span class="comment-time">${formatTime(c.Timestamp)}</span>
-                </div>
-                <div class="comment-text">${linkify(c.Text)}</div>
-                ${c.ImageURL ? `<img src="${c.ImageURL}" class="comment-img" onclick="window.open('${c.ImageURL}', '_blank')">` : ''}
-            </div>
-        `).join('');
-        
-        let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
-        if (canEditDetails) actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
-        
-        const currentCol = STATUS_MAP[t.Status];
-        if (currentUser.Role === 'Admin') {
-            if (currentCol !== 2) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">➡️ قيد التنفيذ</button>`;
-            if (currentCol !== 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">➡️ مراجعة الأدمن</button>`;
-            if (currentCol !== 4) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">➡️ مراجعة العميل</button>`;
-            if (currentCol !== 5) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'معتمد من العميل')">➡️ معتمد من العميل</button>`;
-            if (currentCol !== 6) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">✅ تم النشر</button>`;
-        } else if (currentUser.Role === 'Mustafa') {
-            if (currentCol < 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">رفع للأدمن</button>`;
-            if (currentCol === 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">رفع للعميل</button>`;
-            if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
-            actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">إعادة للتنفيذ</button>`;
-        } else if (currentUser.Role === 'Client') {
-            if (currentCol === 4) {
-                actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
-                actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
+            const platformsArray = (t.Platforms && typeof t.Platforms === 'string') ? t.Platforms.split(',').map(p => p.trim()) : [];
+            const platformOptions = ["فيسبوك", "انستجرام", "يوتيوب", "تيك توك", "الويبسايت", "أخرى"];
+            const platformsHtml = `<div class="platforms-grid">${platformOptions.map(p => `
+                <label><input type="checkbox" class="edit-platform-cb" value="${p}" ${platformsArray.includes(p) ? 'checked' : ''} ${disabledAttr}> ${p}</label>
+            `).join('')}</div>`;
+            
+            let rawLinks = Array.isArray(t.RawLinks) ? t.RawLinks : []; 
+            let reviewLinks = Array.isArray(t.ReviewLinks) ? t.ReviewLinks : [];
+            
+            // Safe Date Parsing
+            let publishDateValue = '';
+            if (t.PublishDate) {
+                let d = new Date(t.PublishDate);
+                if (!isNaN(d.getTime())) {
+                    publishDateValue = d.toISOString().split('T')[0];
+                }
             }
-            if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
-        }
+            
+            let html = `
+                <div class="creator-badge"><span>👤 أنشأها: <strong>${t.Creator}</strong></span></div>
+                <div class="form-group"><label>عنوان المهمة</label><input type="text" id="editTitle" value="${t.Title || ''}" ${disabledAttr}></div>
+                <div class="form-group"><label>النوع</label>
+                    <select id="editType" ${disabledAttr}>
+                        <option value="انشاءات" ${t.Type === 'انشاءات' ? 'selected' : ''}>انشاءات</option>
+                        <option value="ستوري" ${t.Type === 'ستوري' ? 'selected' : ''}>ستوري</option>
+                        <option value="ريل" ${t.Type === 'ريل' ? 'selected' : ''}>ريل</option>
+                        <option value="ريفيو عميل" ${t.Type === 'ريفيو عميل' ? 'selected' : ''}>ريفيو عميل</option>
+                        <option value="أخرى" ${t.Type === 'أخرى' ? 'selected' : ''}>أخرى</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>المنصات</label>${platformsHtml}</div>
+                <div class="form-group"><label>الوصف</label><textarea id="editDesc" rows="3" ${disabledAttr}>${t.Description || ''}</textarea></div>
+                <div class="form-group"><label>تاريخ النشر</label><input type="date" id="editPublishDate" value="${publishDateValue}" ${disabledAttr}></div>
+                
+                <div class="form-group"><label>روابط الخامات (Drive)</label>
+                    <div id="editRawLinksContainer"></div>
+                    ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editRawLinksContainer', 'editRawLinkInput')">+ إضافة رابط خامات</button>` : ''}
+                </div>
+                <div class="form-group"><label>روابط العمل النهائي / المعاينة</label>
+                    <div id="editReviewLinksContainer"></div>
+                    ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editReviewLinksContainer', 'editReviewLinkInput')">+ إضافة رابط معاينة</button>` : ''}
+                </div>
+                
+                <hr>
+                <h4>التعليقات</h4>
+                <div id="commentsList"></div>
+                <div class="form-group" style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                    <div class="mention-popup" id="mentionPopupComment"></div>
+                    <input type="file" id="commentImgInput" accept="image/*" style="display: none" onchange="uploadCommentImage('${t.ID}')">
+                    <button class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('commentImgInput').click()">📷</button>
+                    <input type="text" id="commentInput" placeholder="اكتب تعليقاً... (استخدم @ للمنشن)" oninput="handleMentionInput(this, 'mentionPopupComment')" onkeypress="if(event.key==='Enter') addComment('${t.ID}')" style="flex-grow: 1; margin: 0;">
+                    <button class="btn btn-success" style="width: auto; padding: 10px;" onclick="addComment('${t.ID}')">إرسال</button>
+                </div>
+            `;
+            document.getElementById('detailsBody').innerHTML = html;
+            
+            const rawContainer = document.getElementById('editRawLinksContainer');
+            rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link); });
+            if(rawLinks.length === 0 && canEditDetails) addLinkField('editRawLinksContainer', 'editRawLinkInput');
+            
+            const reviewContainer = document.getElementById('editReviewLinksContainer');
+            reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link); });
+            if(reviewLinks.length === 0 && canEditDetails) addLinkField('editReviewLinksContainer', 'editReviewLinkInput');
+            
+            const comments = boardData.comments.filter(c => c.TaskID === taskId);
+            document.getElementById('commentsList').innerHTML = comments.map(c => `
+                <div class="comment-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="comment-author">${c.Name || 'مستخدم'}</span>
+                        <span class="comment-time">${formatTime(c.Timestamp)}</span>
+                    </div>
+                    <div class="comment-text">${linkify(c.Text)}</div>
+                    ${c.ImageURL ? `<img src="${c.ImageURL}" class="comment-img" onclick="window.open('${c.ImageURL}', '_blank')" onerror="this.style.display='none'">` : ''}
+                </div>
+            `).join('');
+            
+            let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
+            if (canEditDetails) actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
+            
+            const currentCol = STATUS_MAP[t.Status];
+            if (currentUser.Role === 'Admin') {
+                if (currentCol !== 2) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">➡️ قيد التنفيذ</button>`;
+                if (currentCol !== 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">➡️ مراجعة الأدمن</button>`;
+                if (currentCol !== 4) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">➡️ مراجعة العميل</button>`;
+                if (currentCol !== 5) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'معتمد من العميل')">➡️ معتمد من العميل</button>`;
+                if (currentCol !== 6) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">✅ تم النشر</button>`;
+            } else if (currentUser.Role === 'Mustafa') {
+                if (currentCol < 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة الأدمن')">رفع للأدمن</button>`;
+                if (currentCol === 3) actions += `<button class="btn" onclick="moveTask('${t.ID}', 'مراجعة العميل')">رفع للعميل</button>`;
+                if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
+                actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">إعادة للتنفيذ</button>`;
+            } else if (currentUser.Role === 'Client') {
+                if (currentCol === 4) {
+                    actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
+                    actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
+                }
+                if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
+            }
 
-        if (currentUser.Role === 'Admin' || t.Creator === currentUser.Name) {
-            actions += `<button class="btn btn-danger" style="margin-right: auto;" onclick="deleteTask('${t.ID}')">🗑️ حذف المهمة</button>`;
-        }
+            if (currentUser.Role === 'Admin' || t.Creator === currentUser.Name) {
+                actions += `<button class="btn btn-danger" style="margin-right: auto;" onclick="deleteTask('${t.ID}')">🗑️ حذف المهمة</button>`;
+            }
 
-        document.getElementById('detailsActions').innerHTML = actions;
-        document.getElementById('detailsModal').style.display = 'flex';
+            document.getElementById('detailsActions').innerHTML = actions;
+            document.getElementById('detailsModal').style.display = 'flex';
+        } catch (err) {
+            console.error("Error opening details:", err);
+            alert("حدث خطأ أثناء فتح المهمة: " + err.message);
+        }
     }
 
     async function saveTaskDetails(taskId) {
@@ -751,7 +767,7 @@
 
     function linkify(inputText) {
         if (!inputText) return '';
-        let text = inputText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        let text = String(inputText).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         let urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
         text = text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
         let wwwPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
@@ -781,7 +797,7 @@
                         </div>
                         ${!isMe ? `<div class="msg-author">${m.Name}</div>` : ''}
                         <div class="msg-text">${linkify(m.Text)}</div>
-                        ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img" onclick="window.open('${m.ImageURL}', '_blank')">` : ''}
+                        ${m.ImageURL ? `<img src="${m.ImageURL}" class="msg-img" onclick="window.open('${m.ImageURL}', '_blank')" onerror="this.style.display='none'">` : ''}
                         <div class="msg-time">${formatTime(m.Timestamp)}</div>
                         <div class="msg-reacts">${reactHtml}</div>
                         <div class="msg-footer">
