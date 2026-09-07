@@ -595,9 +595,8 @@
             <label><input type="checkbox" class="edit-platform-cb" value="${p}" ${platformsArray.includes(p) ? 'checked' : ''} ${disabledAttr}> ${p}</label>
         `).join('')}</div>`;
         
-        let rawLinks = []; let reviewLinks = [];
-        try { rawLinks = JSON.parse(t.RawLinks || "[]"); } catch(e) {}
-        try { reviewLinks = JSON.parse(t.ReviewLinks || "[]"); } catch(e) {}
+        let rawLinks = t.RawLinks || []; 
+        let reviewLinks = t.ReviewLinks || [];
         
         let html = `
             <div class="creator-badge"><span>👤 أنشأها: <strong>${t.Creator}</strong></span></div>
