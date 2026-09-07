@@ -93,8 +93,6 @@
         .task-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
         .task-meta { font-size: 12px; opacity: 0.8; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
         .tag { display: inline-block; background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: 600; }
-        .card-thumbs { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
-        .card-thumb { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer; border: 1px solid var(--border-color); }
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
 
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 26px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; }
@@ -364,7 +362,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwQtQZFX70epUlIQwzhhfq9NRtBaeVwowcRW3VJz5e8ANY0gKmPr3-PCK3u_kDtERY/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwH4mjjdkK4FOKMDP3ZDPT1ej9nje96J1Us3htMQszzFLBy4G1bzqLatKLVhyXjBZU/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -411,30 +409,20 @@
         const grid = document.getElementById('tasksGrid');
         const columns = Array.from(grid.querySelectorAll('.column'));
         if (columns.length === 0) return;
-
         const gridRect = grid.getBoundingClientRect();
         const gridCenter = gridRect.left + (gridRect.width / 2);
-        
         let currentIndex = 0;
         let minDistance = Infinity;
-        
         columns.forEach((col, i) => {
             const colRect = col.getBoundingClientRect();
             const colCenter = colRect.left + (colRect.width / 2);
             const distance = Math.abs(colCenter - gridCenter);
-            if (distance < minDistance) {
-                minDistance = distance;
-                currentIndex = i;
-            }
+            if (distance < minDistance) { minDistance = distance; currentIndex = i; }
         });
-
         let nextIndex = currentIndex + direction;
         if (nextIndex < 0) nextIndex = 0;
         if (nextIndex >= columns.length) nextIndex = columns.length - 1;
-
-        if(columns[nextIndex]) {
-            columns[nextIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
-        }
+        if(columns[nextIndex]) columns[nextIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
     }
 
     function navigate(viewId, el) {
@@ -444,9 +432,7 @@
         el.classList.add('active');
         const titles = { dashboard: 'لوحة التحكم', tasks: 'المهام', chat: 'الدردشة', settings: 'الإعدادات' };
         document.getElementById('viewTitle').innerText = titles[viewId];
-        if (window.innerWidth <= 768) {
-            document.getElementById('appSidebar').classList.remove('mobile-open');
-        }
+        if (window.innerWidth <= 768) document.getElementById('appSidebar').classList.remove('mobile-open');
     }
 
     async function login(autoEmail, autoPass) {
@@ -465,9 +451,7 @@
                 document.getElementById('appMain').style.display = 'flex';
                 initUserUI();
                 fetchData();
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-            }
+            } else { document.getElementById('loginError').style.display = 'block'; }
         } catch (e) { document.getElementById('loginError').style.display = 'block'; }
     }
 
@@ -511,12 +495,9 @@
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d)) return '';
-        let hours = d.getHours();
-        let mins = d.getMinutes();
-        hours = hours < 10 ? '0' + hours : hours;
-        mins = mins < 10 ? '0' + mins : mins;
-        let day = d.getDate();
-        let month = d.getMonth() + 1;
+        let hours = d.getHours(); let mins = d.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours; mins = mins < 10 ? '0' + mins : mins;
+        let day = d.getDate(); let month = d.getMonth() + 1;
         return `${hours}:${mins} - ${day}/${month}`;
     }
 
@@ -554,14 +535,6 @@
             const colNum = STATUS_MAP[t.Status] || 1;
             counts[colNum-1]++;
             const dl = getDeadlineInfo(t.PublishDate);
-            
-            let rawLinks = []; let reviewLinks = []; let deliveryImages = [];
-            try { rawLinks = JSON.parse(t.RawLinks || "[]"); } catch(e) {}
-            try { reviewLinks = JSON.parse(t.ReviewLinks || "[]"); } catch(e) {}
-            try { deliveryImages = JSON.parse(t.DeliveryImages || "[]"); } catch(e) {}
-            
-            let thumbsHtml = deliveryImages.map(img => `<img src="${img}" class="card-thumb" onclick="window.open('${img}', '_blank')">`).join('');
-            
             const card = document.createElement('div');
             card.className = 'task-card';
             card.onclick = () => openDetails(t.ID);
@@ -571,7 +544,6 @@
                 <div class="task-meta">📅 ${dl.emoji} ${dl.text}</div>
                 <div><span class="tag">${t.Type}</span></div>
                 <div style="font-size:11px; margin-top:5px; opacity:0.7;">${t.Platforms}</div>
-                ${thumbsHtml ? `<div class="card-thumbs">${thumbsHtml}</div>` : ''}
             `;
             document.getElementById(`col-${colNum}`).appendChild(card);
         });
@@ -615,7 +587,6 @@
         document.getElementById('detailsTitle').innerText = t.Title;
         
         const canEditDetails = (currentUser.Role === 'Admin' || t.Creator === currentUser.Name);
-        const canDeliverWork = (canEditDetails || currentUser.Role === 'Mustafa'); 
         const disabledAttr = canEditDetails ? '' : 'disabled';
         
         const platformsArray = t.Platforms ? t.Platforms.split(',').map(p => p.trim()) : [];
@@ -624,21 +595,14 @@
             <label><input type="checkbox" class="edit-platform-cb" value="${p}" ${platformsArray.includes(p) ? 'checked' : ''} ${disabledAttr}> ${p}</label>
         `).join('')}</div>`;
         
-        let rawLinks = []; let reviewLinks = []; let deliveryImages = [];
+        let rawLinks = []; let reviewLinks = [];
         try { rawLinks = JSON.parse(t.RawLinks || "[]"); } catch(e) {}
         try { reviewLinks = JSON.parse(t.ReviewLinks || "[]"); } catch(e) {}
-        try { deliveryImages = JSON.parse(t.DeliveryImages || "[]"); } catch(e) {}
         
         let html = `
-            <div class="creator-badge">
-                <span>👤 أنشأها: <strong>${t.Creator}</strong></span>
-            </div>
-            <div class="form-group">
-                <label>عنوان المهمة</label>
-                <input type="text" id="editTitle" value="${t.Title}" ${disabledAttr}>
-            </div>
-            <div class="form-group">
-                <label>النوع</label>
+            <div class="creator-badge"><span>👤 أنشأها: <strong>${t.Creator}</strong></span></div>
+            <div class="form-group"><label>عنوان المهمة</label><input type="text" id="editTitle" value="${t.Title}" ${disabledAttr}></div>
+            <div class="form-group"><label>النوع</label>
                 <select id="editType" ${disabledAttr}>
                     <option value="انشاءات" ${t.Type === 'انشاءات' ? 'selected' : ''}>انشاءات</option>
                     <option value="ستوري" ${t.Type === 'ستوري' ? 'selected' : ''}>ستوري</option>
@@ -647,35 +611,17 @@
                     <option value="أخرى" ${t.Type === 'أخرى' ? 'selected' : ''}>أخرى</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>المنصات</label>
-                ${platformsHtml}
-            </div>
-            <div class="form-group">
-                <label>الوصف</label>
-                <textarea id="editDesc" rows="3" ${disabledAttr}>${t.Description}</textarea>
-            </div>
-            <div class="form-group">
-                <label>تاريخ النشر</label>
-                <input type="date" id="editPublishDate" value="${t.PublishDate ? new Date(t.PublishDate).toISOString().split('T')[0] : ''}" ${disabledAttr}>
-            </div>
+            <div class="form-group"><label>المنصات</label>${platformsHtml}</div>
+            <div class="form-group"><label>الوصف</label><textarea id="editDesc" rows="3" ${disabledAttr}>${t.Description}</textarea></div>
+            <div class="form-group"><label>تاريخ النشر</label><input type="date" id="editPublishDate" value="${t.PublishDate ? new Date(t.PublishDate).toISOString().split('T')[0] : ''}" ${disabledAttr}></div>
             
-            <div class="form-group">
-                <label>روابط الخامات (Drive)</label>
+            <div class="form-group"><label>روابط الخامات (Drive)</label>
                 <div id="editRawLinksContainer"></div>
                 ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editRawLinksContainer', 'editRawLinkInput')">+ إضافة رابط خامات</button>` : ''}
             </div>
-            
-            <div class="form-group">
-                <label>روابط العمل النهائي / المعاينة</label>
+            <div class="form-group"><label>روابط العمل النهائي / المعاينة</label>
                 <div id="editReviewLinksContainer"></div>
-                ${canDeliverWork ? `<button type="button" class="add-field-btn" onclick="addLinkField('editReviewLinksContainer', 'editReviewLinkInput')">+ إضافة رابط معاينة</button>` : ''}
-            </div>
-            
-            <div class="form-group">
-                <label>صور / لقطات شاشة للتسليم</label>
-                <div id="deliveryImagesContainer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
-                ${canDeliverWork ? `<input type="file" id="deliveryImgInput" accept="image/*" style="display: none" onchange="uploadDeliveryImage('${t.ID}')"><button type="button" class="btn" style="width: auto; padding: 10px;" onclick="document.getElementById('deliveryImgInput').click()">📷 رفع صورة تسليم</button>` : ''}
+                ${canEditDetails ? `<button type="button" class="add-field-btn" onclick="addLinkField('editReviewLinksContainer', 'editReviewLinkInput')">+ إضافة رابط معاينة</button>` : ''}
             </div>
             
             <hr>
@@ -697,15 +643,7 @@
         
         const reviewContainer = document.getElementById('editReviewLinksContainer');
         reviewLinks.forEach(link => addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link));
-        if(reviewLinks.length === 0 && canDeliverWork) addLinkField('editReviewLinksContainer', 'editReviewLinkInput');
-        
-        const imgContainer = document.getElementById('deliveryImagesContainer');
-        imgContainer.innerHTML = deliveryImages.map(img => `
-            <div style="position: relative;">
-                <img src="${img}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open('${img}', '_blank')">
-                ${canDeliverWork ? `<button type="button" onclick="removeDeliveryImage('${t.ID}', '${img}')" style="position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; text-align: center; line-height: 20px;">X</button>` : ''}
-            </div>
-        `).join('');
+        if(reviewLinks.length === 0 && canEditDetails) addLinkField('editReviewLinksContainer', 'editReviewLinkInput');
         
         const comments = boardData.comments.filter(c => c.TaskID === taskId);
         document.getElementById('commentsList').innerHTML = comments.map(c => `
@@ -720,9 +658,7 @@
         `).join('');
         
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
-        if (canEditDetails) {
-            actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
-        }
+        if (canEditDetails) actions += `<button class="btn btn-success" onclick="saveTaskDetails('${t.ID}')">💾 حفظ التعديلات</button>`;
         
         const currentCol = STATUS_MAP[t.Status];
         if (currentUser.Role === 'Admin') {
@@ -741,9 +677,7 @@
                 actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'معتمد من العميل')">اعتماد</button>`;
                 actions += `<button class="btn btn-warning" onclick="moveTask('${t.ID}', 'قيد التنفيذ')">طلب تعديل</button>`;
             }
-            if (currentCol === 5) {
-                actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
-            }
+            if (currentCol === 5) actions += `<button class="btn btn-success" onclick="moveTask('${t.ID}', 'تم النشر')">تأكيد النشر</button>`;
         }
 
         if (currentUser.Role === 'Admin' || t.Creator === currentUser.Name) {
@@ -758,70 +692,16 @@
         const selectedPlatforms = Array.from(document.querySelectorAll('.edit-platform-cb:checked')).map(c => c.value);
         const rawLinks = Array.from(document.querySelectorAll('.editRawLinkInput')).map(i => i.value).filter(v => v);
         const reviewLinks = Array.from(document.querySelectorAll('.editReviewLinkInput')).map(i => i.value).filter(v => v);
-        
-        const t = boardData.tasks.find(x => x.ID === taskId);
-        let deliveryImages = [];
-        try { deliveryImages = JSON.parse(t.DeliveryImages || "[]"); } catch(e) {}
-        
         const payload = {
             action: 'updateTaskDetails', email: currentUser.Email, password: currentUser.password, taskId: taskId,
-            title: document.getElementById('editTitle').value,
-            type: document.getElementById('editType').value,
-            platforms: selectedPlatforms.join(', '),
-            description: document.getElementById('editDesc').value,
-            publishDate: document.getElementById('editPublishDate').value,
-            rawLinks: rawLinks,
-            reviewLinks: reviewLinks,
-            deliveryImages: deliveryImages
+            title: document.getElementById('editTitle').value, type: document.getElementById('editType').value,
+            platforms: selectedPlatforms.join(', '), description: document.getElementById('editDesc').value,
+            publishDate: document.getElementById('editPublishDate').value, rawLinks: rawLinks, reviewLinks: reviewLinks
         };
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         alert('تم حفظ التعديلات بنجاح');
         fetchData();
         closeModal('detailsModal');
-    }
-
-    async function uploadDeliveryImage(taskId) {
-        const file = document.getElementById('deliveryImgInput').files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = async () => {
-            const formData = new FormData();
-            formData.append("key", IMG_API_KEY);
-            formData.append("image", reader.result.split(',')[1]);
-            try {
-                const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
-                const data = await res.json();
-                if (data.data.url) {
-                    const t = boardData.tasks.find(x => x.ID === taskId);
-                    let deliveryImages = [];
-                    try { deliveryImages = JSON.parse(t.DeliveryImages || "[]"); } catch(e) {}
-                    deliveryImages.push(data.data.url);
-                    
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({
-                        action: 'updateDeliveryImages', email: currentUser.Email, password: currentUser.password, taskId: taskId, deliveryImages: deliveryImages
-                    }) });
-                    document.getElementById('deliveryImgInput').value = '';
-                    await new Promise(r => setTimeout(r, 1000)); 
-                    await fetchData();
-                    openDetails(taskId);
-                }
-            } catch (e) { alert("فشل رفع الصورة"); }
-        };
-    }
-
-    async function removeDeliveryImage(taskId, imgUrl) {
-        const t = boardData.tasks.find(x => x.ID === taskId);
-        let deliveryImages = [];
-        try { deliveryImages = JSON.parse(t.DeliveryImages || "[]"); } catch(e) {}
-        deliveryImages = deliveryImages.filter(img => img !== imgUrl);
-        
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({
-            action: 'updateDeliveryImages', email: currentUser.Email, password: currentUser.password, taskId: taskId, deliveryImages: deliveryImages
-        }) });
-        await new Promise(r => setTimeout(r, 1000));
-        await fetchData();
-        openDetails(taskId);
     }
 
     async function addComment(taskId) {
@@ -830,7 +710,6 @@
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
         document.getElementById('mentionPopupComment').style.display = 'none';
-        await new Promise(r => setTimeout(r, 1000));
         await fetchData(); 
         openDetails(taskId);
     }
@@ -850,7 +729,6 @@
                 if (data.data.url) {
                     await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
                     document.getElementById('commentImgInput').value = '';
-                    await new Promise(r => setTimeout(r, 1000));
                     await fetchData(); 
                     openDetails(taskId); 
                 }
@@ -861,7 +739,6 @@
     async function moveTask(taskId, newStatus) {
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) });
         closeModal('detailsModal');
-        await new Promise(r => setTimeout(r, 1000));
         await fetchData(); 
     }
 
@@ -869,7 +746,6 @@
         if (confirm('هل أنت متأكد من حذف هذه المهمة نهائياً؟')) {
             await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
             closeModal('detailsModal');
-            await new Promise(r => setTimeout(r, 1000));
             await fetchData();
         }
     }
@@ -1008,14 +884,9 @@
         if (unreadCount > 0) {
             badge.innerText = unreadCount;
             badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
+        } else { badge.style.display = 'none'; }
         document.getElementById('notifList').innerHTML = notifs.map(n => `
-            <div class="notif-item">
-                ${n.Text}
-                <div class="notif-time">${formatTime(n.Timestamp)}</div>
-            </div>
+            <div class="notif-item">${n.Text}<div class="notif-time">${formatTime(n.Timestamp)}</div></div>
         `).join('') || '<div class="empty-state">لا توجد إشعارات</div>';
     }
 
@@ -1024,9 +895,7 @@
         dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
         if (dropdown.style.display === 'flex') {
             const unreadCount = (boardData.notifications || []).filter(n => !n.ID.toString().startsWith('READ_')).length;
-            if (unreadCount > 0) {
-                markNotificationsRead();
-            }
+            if (unreadCount > 0) markNotificationsRead();
         }
     }
 
