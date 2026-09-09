@@ -349,7 +349,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxc94CuHBAI9_vw8Xm7nLsGGtCplw77N2DF92ZzLFD7ogy-jsh6Q4GWOGUop9TGyg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxpXAFef_AWuOt1MQ4C1xtNoafIDo5neNds9WDXEihJXb1uA6sRiTc90pYWMa8TemU/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -579,11 +579,9 @@
         closeModal('taskModal');
         showToast('جاري حفظ المهمة...');
         
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
-        setTimeout(() => {
-            fetchData();
-            showToast('تم حفظ المهمة بنجاح');
-        }, 2000);
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        showToast('تم حفظ المهمة بنجاح');
+        fetchData();
     }
 
     function openUserModal() {
@@ -602,10 +600,10 @@
             newPass: document.getElementById('newUserPass').value || '1234',
             newRole: document.getElementById('newUserRole').value
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         closeModal('userModal');
         showToast('تم إضافة المستخدم بنجاح');
-        setTimeout(fetchData, 2000);
+        fetchData();
     }
 
     function openDetails(taskId) {
@@ -687,21 +685,19 @@
             rawLinks: Array.from(document.querySelectorAll('.editRawLinkInput')).map(i => i.value).filter(v => v), 
             reviewLinks: Array.from(document.querySelectorAll('.editReviewLinkInput')).map(i => i.value).filter(v => v)
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم حفظ التعديلات');
-        setTimeout(fetchData, 1500);
+        fetchData();
         closeModal('detailsModal');
     }
 
     async function addComment(taskId) {
         const text = document.getElementById('commentInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
-        setTimeout(async () => { 
-            await fetchData(); 
-            openDetails(taskId);
-        }, 1500);
+        await fetchData(); 
+        openDetails(taskId);
     }
 
     async function uploadCommentImage(taskId) {
@@ -717,35 +713,38 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
                     document.getElementById('commentImgInput').value = '';
-                    setTimeout(async () => { 
-                        await fetchData(); 
-                        openDetails(taskId); 
-                    }, 1500);
+                    await fetchData(); 
+                    openDetails(taskId); 
                     showToast('تم رفع الصورة');
                 }
             } catch (e) { showToast('فشل رفع الصورة', 'error'); }
         };
     }
 
-    // ============ منهجية Fire & Forget + Delayed Sync ============
+    // ============ الحل الصارم (CORS Enabled - بدون no-cors) ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
         
-        await fetch(API_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            headers: {'Content-Type': 'text/plain'}, 
-            body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
-        });
-        
-        // إعطاء خادم جوجل شيت 2.5 ثانية لكتابة البيانات قبل جلبها لضمان النقل الفعلي
-        setTimeout(async () => {
-            await fetchData(); 
-            showToast('تم تحديث حالة المهمة بنجاح');
-        }, 2500);
+        try {
+            const res = await fetch(API_URL, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'text/plain'}, 
+                body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
+            });
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                await fetchData();
+                showToast('تم تحديث الحالة بنجاح');
+            } else {
+                showToast(data.message || 'فشل التحديث - راجع الصلاحيات', 'error');
+            }
+        } catch (e) {
+            showToast('فشل الاتصال بالخادم', 'error');
+        }
     }
 
     function deleteTask(taskId) {
@@ -756,11 +755,9 @@
             closeModal('detailsModal');
             showToast('جاري حذف المهمة...');
             
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
-            setTimeout(() => {
-                fetchData();
-                showToast('تم حذف المهمة');
-            }, 2000);
+            await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
+            showToast('تم حذف المهمة');
+            fetchData();
         };
     }
 
@@ -806,7 +803,7 @@
     }
 
     async function pokeUser(targetEmail) {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
         showToast('تم إرسال تنبيه مستعجل');
     }
 
@@ -819,20 +816,20 @@
     async function sendChat() {
         const text = document.getElementById('chatTextInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
         document.getElementById('chatTextInput').value = '';
         document.getElementById('mentionPopupChat').style.display = 'none';
     }
 
     async function reactMsg(msgId, emoji) {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
         toggleReactPopup(msgId);
     }
 
     function editMsg(msgId) {
         const newText = prompt("تعديل الرسالة:");
         if(newText !== null) {
-            fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
+            fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
         }
     }
 
@@ -849,7 +846,7 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
                     showToast('تم إرسال الصورة');
                 }
             } catch (e) { showToast('فشل رفع الصورة', 'error'); }
@@ -884,10 +881,10 @@
             newName: document.getElementById('newNameInput').value || "", 
             avatarUrl: window.tempAvatar || ""
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم تحديث الملف الشخصي');
         initUserUI(); 
-        setTimeout(fetchData, 1000);
+        fetchData();
     }
 
     function renderNotifications() {
@@ -909,7 +906,7 @@
     }
 
     async function markNotificationsRead() {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
         boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
         renderNotifications();
     }
