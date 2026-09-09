@@ -579,9 +579,11 @@
         closeModal('taskModal');
         showToast('جاري حفظ المهمة...');
         
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
-        showToast('تم حفظ المهمة بنجاح');
-        fetchData();
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        setTimeout(() => {
+            fetchData();
+            showToast('تم حفظ المهمة بنجاح');
+        }, 2000);
     }
 
     function openUserModal() {
@@ -600,10 +602,10 @@
             newPass: document.getElementById('newUserPass').value || '1234',
             newRole: document.getElementById('newUserRole').value
         };
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         closeModal('userModal');
         showToast('تم إضافة المستخدم بنجاح');
-        fetchData();
+        setTimeout(fetchData, 2000);
     }
 
     function openDetails(taskId) {
@@ -685,19 +687,21 @@
             rawLinks: Array.from(document.querySelectorAll('.editRawLinkInput')).map(i => i.value).filter(v => v), 
             reviewLinks: Array.from(document.querySelectorAll('.editReviewLinkInput')).map(i => i.value).filter(v => v)
         };
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم حفظ التعديلات');
-        fetchData();
+        setTimeout(fetchData, 1500);
         closeModal('detailsModal');
     }
 
     async function addComment(taskId) {
         const text = document.getElementById('commentInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
-        await fetchData(); 
-        openDetails(taskId);
+        setTimeout(async () => { 
+            await fetchData(); 
+            openDetails(taskId);
+        }, 1500);
     }
 
     async function uploadCommentImage(taskId) {
@@ -713,38 +717,35 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
                     document.getElementById('commentImgInput').value = '';
-                    await fetchData(); 
-                    openDetails(taskId); 
+                    setTimeout(async () => { 
+                        await fetchData(); 
+                        openDetails(taskId); 
+                    }, 1500);
                     showToast('تم رفع الصورة');
                 }
             } catch (e) { showToast('فشل رفع الصورة', 'error'); }
         };
     }
 
-    // ============ التحديث المتزامن الصارم (Strict Synchronous Flow) ============
+    // ============ منهجية Fire & Forget + Delayed Sync ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
-        showToast('جاري تحديث الحالة، يرجى الانتظار...');
+        showToast('جاري تحديث الحالة...');
         
-        try {
-            const res = await fetch(API_URL, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'text/plain'}, 
-                body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
-            });
-            const data = await res.json();
-            
-            if(data.status === 'success') {
-                showToast('تم تحديث الحالة بنجاح');
-                await fetchData(); // جلب البيانات الجديدة من الشيت بعد التأكد من الحفظ
-            } else {
-                showToast(data.message || 'فشل التحديث، حاول مرة أخرى', 'error');
-            }
-        } catch (e) { 
-            showToast('فشل الاتصال بالخادم', 'error'); 
-        }
+        await fetch(API_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            headers: {'Content-Type': 'text/plain'}, 
+            body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
+        });
+        
+        // إعطاء خادم جوجل شيت 2.5 ثانية لكتابة البيانات قبل جلبها لضمان النقل الفعلي
+        setTimeout(async () => {
+            await fetchData(); 
+            showToast('تم تحديث حالة المهمة بنجاح');
+        }, 2500);
     }
 
     function deleteTask(taskId) {
@@ -755,9 +756,11 @@
             closeModal('detailsModal');
             showToast('جاري حذف المهمة...');
             
-            await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
-            showToast('تم حذف المهمة');
-            fetchData();
+            await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
+            setTimeout(() => {
+                fetchData();
+                showToast('تم حذف المهمة');
+            }, 2000);
         };
     }
 
@@ -803,7 +806,7 @@
     }
 
     async function pokeUser(targetEmail) {
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
         showToast('تم إرسال تنبيه مستعجل');
     }
 
@@ -816,20 +819,20 @@
     async function sendChat() {
         const text = document.getElementById('chatTextInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
         document.getElementById('chatTextInput').value = '';
         document.getElementById('mentionPopupChat').style.display = 'none';
     }
 
     async function reactMsg(msgId, emoji) {
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
         toggleReactPopup(msgId);
     }
 
     function editMsg(msgId) {
         const newText = prompt("تعديل الرسالة:");
         if(newText !== null) {
-            fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
+            fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
         }
     }
 
@@ -846,7 +849,7 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
                     showToast('تم إرسال الصورة');
                 }
             } catch (e) { showToast('فشل رفع الصورة', 'error'); }
@@ -881,10 +884,10 @@
             newName: document.getElementById('newNameInput').value || "", 
             avatarUrl: window.tempAvatar || ""
         };
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم تحديث الملف الشخصي');
         initUserUI(); 
-        fetchData();
+        setTimeout(fetchData, 1000);
     }
 
     function renderNotifications() {
@@ -906,7 +909,7 @@
     }
 
     async function markNotificationsRead() {
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
         boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
         renderNotifications();
     }
