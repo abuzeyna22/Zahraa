@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- أيقونة بوابة الزهراء -->
     <link rel="icon" type="image/png" href="https://alzahraadevelopment.com/wp-content/uploads/2024/12/zahra-logo3-1.png">
     <title>بوابة الزهراء للتطوير العقاري</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -421,29 +420,43 @@
     async function login(autoEmail, autoPass) {
         const email = autoEmail || document.getElementById('emailInput').value;
         const pass = autoPass || document.getElementById('passInput').value;
+        if(!email || !pass) return;
+        
         try {
-            const res = await fetch(`${API_URL}?action=login&email=${email}&password=${pass}`);
+            const res = await fetch(`${API_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}&cb=${Date.now()}`);
             const data = await res.json();
             if (data.status === 'success') {
                 currentUser = data.user;
                 currentUser.password = pass;
-                localStorage.setItem('zahraaUser', JSON.stringify({ email: email, password: pass }));
+                try { localStorage.setItem('zahraaUser', JSON.stringify({ email: email, password: pass })); } catch(e) {}
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appSidebar').style.display = 'flex';
                 document.getElementById('appMain').style.display = 'flex';
                 initUserUI();
                 fetchData();
-            } else { showToast('بيانات الدخول غير صحيحة', 'error'); }
-        } catch (e) { showToast('خطأ في الاتصال', 'error'); }
+            } else {
+                if(!autoEmail) showToast('بيانات الدخول غير صحيحة', 'error');
+                else {
+                    try { localStorage.removeItem('zahraaUser'); } catch(e) {}
+                }
+            }
+        } catch (e) { 
+            if(!autoEmail) showToast('خطأ في الاتصال', 'error'); 
+        }
     }
 
     window.onload = function() {
-        const savedUser = localStorage.getItem('zahraaUser');
-        if (savedUser) { const u = JSON.parse(savedUser); login(u.email, u.password); }
-        if (localStorage.getItem('zahraaDark') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('darkModeBtn').innerText = '☀️';
-        }
+        try {
+            const savedUser = localStorage.getItem('zahraaUser');
+            if (savedUser) {
+                const u = JSON.parse(savedUser);
+                login(u.email, u.password);
+            }
+            if (localStorage.getItem('zahraaDark') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeBtn').innerText = '☀️';
+            }
+        } catch(e) {}
     };
 
     function logout() { localStorage.removeItem('zahraaUser'); location.reload(); }
@@ -460,7 +473,7 @@
     async function fetchData() {
         if (!currentUser) return;
         try {
-            const res = await fetch(`${API_URL}?action=getBoardData&email=${currentUser.Email}&password=${currentUser.password}`);
+            const res = await fetch(`${API_URL}?action=getBoardData&email=${encodeURIComponent(currentUser.Email)}&password=${encodeURIComponent(currentUser.password)}&cb=${Date.now()}`);
             const data = await res.json();
             if (data.status === 'success') {
                 boardData = data;
@@ -478,7 +491,7 @@
                 renderChat();
                 renderNotifications();
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {}
     }
     setInterval(fetchData, 5000);
 
@@ -563,7 +576,6 @@
             rawLinks: Array.from(document.querySelectorAll('.rawLinkInput')).map(i => i.value).filter(v => v)
         };
         
-        // تحديث الواجهة فوراً (Optimistic UI)
         const tempId = 'temp-' + Date.now();
         boardData.tasks.push({
             ID: tempId, Title: title, Type: payload.type, Platforms: payload.platforms.join(', '),
@@ -574,9 +586,9 @@
         closeModal('taskModal');
         showToast('جاري حفظ المهمة...');
         
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم حفظ المهمة بنجاح');
-        setTimeout(fetchData, 2000);
+        fetchData();
     }
 
     function openUserModal() {
@@ -595,10 +607,10 @@
             newPass: document.getElementById('newUserPass').value || '1234',
             newRole: document.getElementById('newUserRole').value
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         closeModal('userModal');
         showToast('تم إضافة المستخدم بنجاح');
-        setTimeout(fetchData, 1500);
+        fetchData();
     }
 
     function openDetails(taskId) {
@@ -680,16 +692,16 @@
             rawLinks: Array.from(document.querySelectorAll('.editRawLinkInput')).map(i => i.value).filter(v => v), 
             reviewLinks: Array.from(document.querySelectorAll('.editReviewLinkInput')).map(i => i.value).filter(v => v)
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم حفظ التعديلات');
-        setTimeout(fetchData, 1500);
+        fetchData();
         closeModal('detailsModal');
     }
 
     async function addComment(taskId) {
         const text = document.getElementById('commentInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: text}) });
         document.getElementById('commentInput').value = '';
         await fetchData(); 
         openDetails(taskId);
@@ -708,7 +720,7 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'addComment', email: currentUser.Email, password: currentUser.password, taskId: taskId, text: "📷 صورة", imageUrl: data.data.url}) });
                     document.getElementById('commentImgInput').value = '';
                     await fetchData(); 
                     openDetails(taskId); 
@@ -718,28 +730,38 @@
         };
     }
 
-    // تحديث الواجهة فوراً عند نقل المهمة (Optimistic UI)
+    // ============ الحل النهائي لصلاحيات النقل (CORS Enabled) ============
     async function moveTask(taskId, newStatus) {
         const task = boardData.tasks.find(t => t.ID === taskId);
+        const oldStatus = task.Status; // حفظ الحالة القديمة للتراجع إذا فشل الطلب
         if (task) {
             task.Status = newStatus;
-            renderTasks();
+            renderTasks(); // نقل بصري فوري
         }
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
         
         try {
-            await fetch(API_URL, { 
+            const res = await fetch(API_URL, { 
                 method: 'POST', 
-                mode: 'no-cors', 
                 headers: {'Content-Type': 'text/plain'}, 
                 body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
             });
-            showToast('تم تحديث الحالة بنجاح');
-            setTimeout(fetchData, 2000);
+            const data = await res.json();
+            if(data.status === 'success') {
+                showToast('تم تحديث الحالة بنجاح');
+                fetchData(); // جلب البيانات بعد التأكد من نجاح الخادم
+            } else {
+                // الخادم رفض الطلب (مثلاً بسبب الصلاحيات)
+                if (task) task.Status = oldStatus; // إعادة المهمة لمكانها القديم
+                renderTasks();
+                showToast(data.message || 'فشل التحديث', 'error');
+            }
         } catch (e) { 
-            showToast('فشل الاتصال', 'error'); 
-            fetchData(); 
+            // خطأ في الشبكة
+            if (task) task.Status = oldStatus;
+            renderTasks();
+            showToast('فشل الاتصال بالخادم', 'error'); 
         }
     }
 
@@ -748,15 +770,14 @@
         document.getElementById('confirmModal').style.display = 'flex';
         document.getElementById('confirmOkBtn').onclick = async () => {
             closeModal('confirmModal');
-            // حذف فوري من الواجهة
             boardData.tasks = boardData.tasks.filter(t => t.ID !== taskId);
             renderTasks();
             closeModal('detailsModal');
             showToast('جاري حذف المهمة...');
             
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
+            await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
             showToast('تم حذف المهمة');
-            setTimeout(fetchData, 1500);
+            fetchData();
         };
     }
 
@@ -802,7 +823,7 @@
     }
 
     async function pokeUser(targetEmail) {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'pokeUser', email: currentUser.Email, password: currentUser.password, targetEmail: targetEmail}) });
         showToast('تم إرسال تنبيه مستعجل');
     }
 
@@ -815,20 +836,20 @@
     async function sendChat() {
         const text = document.getElementById('chatTextInput').value;
         if(!text) return;
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: text}) });
         document.getElementById('chatTextInput').value = '';
         document.getElementById('mentionPopupChat').style.display = 'none';
     }
 
     async function reactMsg(msgId, emoji) {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'reactChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, emoji: emoji}) });
         toggleReactPopup(msgId);
     }
 
     function editMsg(msgId) {
         const newText = prompt("تعديل الرسالة:");
         if(newText !== null) {
-            fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
+            fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'editChat', email: currentUser.Email, password: currentUser.password, msgId: msgId, text: newText}) });
         }
     }
 
@@ -845,7 +866,7 @@
                 const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.data.url) {
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
+                    await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'sendChat', email: currentUser.Email, password: currentUser.password, text: "📷 صورة", imageUrl: data.data.url}) });
                     showToast('تم إرسال الصورة');
                 }
             } catch (e) { showToast('فشل رفع الصورة', 'error'); }
@@ -880,10 +901,10 @@
             newName: document.getElementById('newNameInput').value || "", 
             avatarUrl: window.tempAvatar || ""
         };
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
         showToast('تم تحديث الملف الشخصي');
         initUserUI(); 
-        setTimeout(fetchData, 1000);
+        fetchData();
     }
 
     function renderNotifications() {
@@ -905,7 +926,7 @@
     }
 
     async function markNotificationsRead() {
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'markNotificationsRead', email: currentUser.Email, password: currentUser.password}) });
         boardData.notifications.forEach(n => { if(!n.ID.toString().startsWith('READ_')) n.ID = 'READ_' + n.ID; });
         renderNotifications();
     }
