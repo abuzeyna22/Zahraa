@@ -349,7 +349,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxCe_CZlK_PbX3lIHaB1l8hQYxubLQVir6DZs9UFwjfQLJrkp5vO2Z04G1h6CgAqg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxc94CuHBAI9_vw8Xm7nLsGGtCplw77N2DF92ZzLFD7ogy-jsh6Q4GWOGUop9TGyg/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -478,7 +478,7 @@
             if (data.status === 'success') {
                 boardData = data;
                 if (prevData.notifications > 0 && boardData.notifications.length > prevData.notifications) {
-                    const latestNotif = boardData.notifications[0];
+                    const latestNotif = boardData.notifications[0]; // الآن أصبحت الأحدث أولاً بفضل الفرز في الخادم
                     if (latestNotif.Text.includes("🔔")) playSound('poke');
                     else playSound('notif');
                 }
