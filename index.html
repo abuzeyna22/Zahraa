@@ -349,7 +349,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbybmGJPMXhKjsE3ckk9gYfhGWCfEvC0INXLuhKu3DaisW7JLCARDPf1X2SGPWQa/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbySpQZccf22gO7_vXFM5c4BDlBnBzWwEb5kWhc4LD2E0kzVHXk3ET1m_aiDs1VvlO0/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='100%25' height='100%25' fill='%23e7e5e4'/%3E%3Ctext x='50%25' y='50%25' font-family='Cairo' font-size='24' text-anchor='middle' dy='.3em' fill='%23777'%3EU%3C/text%3E%3C/svg%3E";
@@ -643,9 +643,27 @@
         rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link); });
         reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link); });
         
-        document.getElementById('commentsList').innerHTML = boardData.comments.filter(c => c.TaskID === taskId).map(c => `
-            <div class="comment-box"><div style="display:flex; justify-content:space-between;"><span class="comment-author">${c.Name}</span><span class="comment-time">${formatTime(c.Timestamp)}</span></div><div class="comment-text">${linkify(c.Text)}</div></div>
-        `).join('');
+        // ============ إصلاح عرض صور التعليقات (Thumbnails) ============
+        document.getElementById('commentsList').innerHTML = boardData.comments.filter(c => c.TaskID === taskId).map(c => {
+            // التحقق الذكي من رابط الصورة (نفس منطق الدردشة)
+            let imgUrl = String(c.ImageURL || "");
+            if (!imgUrl.startsWith('http')) {
+                let ts = String(c.Timestamp || "");
+                if (ts.startsWith('http')) imgUrl = ts; // Fallback for legacy data
+            }
+            let isImgValid = imgUrl.startsWith('http') && !imgUrl.includes('drive.google.com');
+            
+            return `
+                <div class="comment-box">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span class="comment-author">${c.Name}</span>
+                        <span class="comment-time">${formatTime(c.Timestamp)}</span>
+                    </div>
+                    <div class="comment-text">${linkify(c.Text)}</div>
+                    ${isImgValid ? `<img src="${imgUrl}" class="comment-img" onclick="window.open('${imgUrl}', '_blank')" onerror="this.style.display='none'">` : ''}
+                </div>
+            `;
+        }).join('');
         
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
         if (canEditDetails) actions += `<button class="btn btn-gold" onclick="saveTaskDetails('${t.ID}')">💾 حفظ</button>`;
@@ -728,7 +746,7 @@
         };
     }
 
-        // ============ الحل النهائي لنقل المهام ============
+    // ============ النقل والحذف عبر POST عادي (بدون no-cors) ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
@@ -750,15 +768,14 @@
             const data = await res.json();
             
             if (data.status === 'success') {
-                // 1. تحديث الواجهة فوراً (نقل بصري محلي)
+                // تحديث محلي فوري لضمان النقل البصري
                 const task = boardData.tasks.find(t => t.ID === taskId);
-                if (task) {
-                    task.Status = newStatus;
-                    renderTasks(); // إعادة رسم اللوحة لتنقل المهمة بصرياً
-                }
+                if (task) task.Status = newStatus;
+                renderTasks();
+                
                 showToast('تم تحديث الحالة بنجاح');
                 
-                // 2. تأخير جلب البيانات 2.5 ثانية لإعطاء جوجل شيت وقتاً لحفظ التغيير
+                // مزامنة مع الخادم بعد ثانيتين
                 setTimeout(() => {
                     fetchData(); 
                 }, 2500); 
@@ -819,6 +836,13 @@
             const reacts = JSON.parse(m.Reactions || "{}");
             let reactHtml = Object.entries(reacts).map(([email, emoji]) => emoji).join(" ");
             
+            let imgUrl = String(m.ImageURL || "");
+            if (!imgUrl.startsWith('http')) {
+                let ts = String(m.Timestamp || "");
+                if (ts.startsWith('http')) imgUrl = ts;
+            }
+            let isImgValid = imgUrl.startsWith('http') && !imgUrl.includes('drive.google.com');
+            
             return `
                 <div class="chat-msg ${isMe ? 'me' : ''}">
                     <img src="${avatar}" class="avatar">
@@ -828,6 +852,7 @@
                         </div>
                         ${!isMe ? `<div class="msg-author">${m.Name} <button onclick="pokeUser('${m.Email}')" style="background:none; border:none; cursor:pointer; float:left; color:var(--gold-color); animation: pulse 2s infinite;">🔔</button></div>` : ''}
                         <div class="msg-text">${linkify(m.Text)}</div>
+                        ${isImgValid ? `<img src="${imgUrl}" class="msg-img" onclick="window.open('${imgUrl}', '_blank')" onerror="this.style.display='none'">` : ''}
                         <div class="msg-time">${formatTime(m.Timestamp)}</div>
                         <div class="msg-reacts">${reactHtml}</div>
                         <div class="msg-footer">
