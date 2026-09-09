@@ -349,7 +349,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxpXAFef_AWuOt1MQ4C1xtNoafIDo5neNds9WDXEihJXb1uA6sRiTc90pYWMa8TemU/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxrL9jZdKlYDvjxNoE-Rf4E9eJljxug76vh21Ve4atmPH6v6zXgh2E0zaIa_JUZYA/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     
@@ -723,17 +723,14 @@
         };
     }
 
-    // ============ الحل الصارم (CORS Enabled - بدون no-cors) ============
+    // ============ الحل النهائي عبر GET (CORS Friendly) ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
         
         try {
-            const res = await fetch(API_URL, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'text/plain'}, 
-                body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
-            });
+            const url = `${API_URL}?action=updateTaskStatus&email=${encodeURIComponent(currentUser.Email)}&password=${encodeURIComponent(currentUser.password)}&taskId=${encodeURIComponent(taskId)}&newStatus=${encodeURIComponent(newStatus)}&cb=${Date.now()}`;
+            const res = await fetch(url);
             const data = await res.json();
             
             if (data.status === 'success') {
@@ -743,6 +740,7 @@
                 showToast(data.message || 'فشل التحديث - راجع الصلاحيات', 'error');
             }
         } catch (e) {
+            console.error("Move Task Error:", e);
             showToast('فشل الاتصال بالخادم', 'error');
         }
     }
@@ -755,9 +753,19 @@
             closeModal('detailsModal');
             showToast('جاري حذف المهمة...');
             
-            await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action:'deleteTask', email: currentUser.Email, password: currentUser.password, taskId: taskId}) });
-            showToast('تم حذف المهمة');
-            fetchData();
+            try {
+                const url = `${API_URL}?action=deleteTask&email=${encodeURIComponent(currentUser.Email)}&password=${encodeURIComponent(currentUser.password)}&taskId=${encodeURIComponent(taskId)}&cb=${Date.now()}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    fetchData();
+                    showToast('تم حذف المهمة');
+                } else {
+                    showToast('فشل الحذف', 'error');
+                }
+            } catch (e) {
+                showToast('فشل الاتصال بالخادم', 'error');
+            }
         };
     }
 
