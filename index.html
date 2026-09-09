@@ -478,7 +478,7 @@
             if (data.status === 'success') {
                 boardData = data;
                 if (prevData.notifications > 0 && boardData.notifications.length > prevData.notifications) {
-                    const latestNotif = boardData.notifications[0]; // الآن أصبحت الأحدث أولاً بفضل الفرز في الخادم
+                    const latestNotif = boardData.notifications[0];
                     if (latestNotif.Text.includes("🔔")) playSound('poke');
                     else playSound('notif');
                 }
@@ -576,13 +576,6 @@
             rawLinks: Array.from(document.querySelectorAll('.rawLinkInput')).map(i => i.value).filter(v => v)
         };
         
-        const tempId = 'temp-' + Date.now();
-        boardData.tasks.push({
-            ID: tempId, Title: title, Type: payload.type, Platforms: payload.platforms.join(', '),
-            Description: payload.description, PublishDate: payload.publishDate, RawLinks: payload.rawLinks,
-            ReviewLinks: [], Status: "محتوى مطلوب", Creator: currentUser.Name, CreatedAt: new Date().toISOString()
-        });
-        renderTasks();
         closeModal('taskModal');
         showToast('جاري حفظ المهمة...');
         
@@ -730,16 +723,10 @@
         };
     }
 
-    // ============ الحل النهائي لصلاحيات النقل (CORS Enabled) ============
+    // ============ التحديث المتزامن الصارم (Strict Synchronous Flow) ============
     async function moveTask(taskId, newStatus) {
-        const task = boardData.tasks.find(t => t.ID === taskId);
-        const oldStatus = task.Status; // حفظ الحالة القديمة للتراجع إذا فشل الطلب
-        if (task) {
-            task.Status = newStatus;
-            renderTasks(); // نقل بصري فوري
-        }
         closeModal('detailsModal');
-        showToast('جاري تحديث الحالة...');
+        showToast('جاري تحديث الحالة، يرجى الانتظار...');
         
         try {
             const res = await fetch(API_URL, { 
@@ -748,19 +735,14 @@
                 body: JSON.stringify({action:'updateTaskStatus', email: currentUser.Email, password: currentUser.password, taskId: taskId, newStatus: newStatus}) 
             });
             const data = await res.json();
+            
             if(data.status === 'success') {
                 showToast('تم تحديث الحالة بنجاح');
-                fetchData(); // جلب البيانات بعد التأكد من نجاح الخادم
+                await fetchData(); // جلب البيانات الجديدة من الشيت بعد التأكد من الحفظ
             } else {
-                // الخادم رفض الطلب (مثلاً بسبب الصلاحيات)
-                if (task) task.Status = oldStatus; // إعادة المهمة لمكانها القديم
-                renderTasks();
-                showToast(data.message || 'فشل التحديث', 'error');
+                showToast(data.message || 'فشل التحديث، حاول مرة أخرى', 'error');
             }
         } catch (e) { 
-            // خطأ في الشبكة
-            if (task) task.Status = oldStatus;
-            renderTasks();
             showToast('فشل الاتصال بالخادم', 'error'); 
         }
     }
@@ -770,8 +752,6 @@
         document.getElementById('confirmModal').style.display = 'flex';
         document.getElementById('confirmOkBtn').onclick = async () => {
             closeModal('confirmModal');
-            boardData.tasks = boardData.tasks.filter(t => t.ID !== taskId);
-            renderTasks();
             closeModal('detailsModal');
             showToast('جاري حذف المهمة...');
             
