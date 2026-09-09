@@ -349,7 +349,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxE-LVMfADq6ycamGLsWfyyS4P6xisMpKgG-Lqh1Gv8WnnqkhIYCNO6G0UqcLHCK2o/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwkC6QmLaFHweanc_nOs5RrUiQGlHc-8h2lUu2xhITMnhz9d0SOrKagtyf4ccoN7gc/exec";
     const IMG_API_KEY = "71307118640265da76172e90445b208b";
     const STATUS_MAP = { "محتوى مطلوب": 1, "قيد التنفيذ": 2, "مراجعة الأدمن": 3, "مراجعة العميل": 4, "معتمد من العميل": 5, "تم النشر": 6 };
     const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='100%25' height='100%25' fill='%23e7e5e4'/%3E%3Ctext x='50%25' y='50%25' font-family='Cairo' font-size='24' text-anchor='middle' dy='.3em' fill='%23777'%3EU%3C/text%3E%3C/svg%3E";
@@ -728,7 +728,7 @@
         };
     }
 
-    // ============ النقل والحذف عبر POST عادي (بدون no-cors) ============
+        // ============ الحل النهائي لنقل المهام ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
@@ -750,8 +750,18 @@
             const data = await res.json();
             
             if (data.status === 'success') {
-                await fetchData();
+                // 1. تحديث الواجهة فوراً (نقل بصري محلي)
+                const task = boardData.tasks.find(t => t.ID === taskId);
+                if (task) {
+                    task.Status = newStatus;
+                    renderTasks(); // إعادة رسم اللوحة لتنقل المهمة بصرياً
+                }
                 showToast('تم تحديث الحالة بنجاح');
+                
+                // 2. تأخير جلب البيانات 2.5 ثانية لإعطاء جوجل شيت وقتاً لحفظ التغيير
+                setTimeout(() => {
+                    fetchData(); 
+                }, 2500); 
             } else {
                 showToast(data.message || 'فشل التحديث', 'error');
             }
