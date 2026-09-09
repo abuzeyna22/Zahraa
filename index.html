@@ -167,17 +167,9 @@
         .toast { background: var(--container-bg); color: var(--text-color); padding: 15px 25px; border-radius: 12px; box-shadow: var(--shadow-lg); border-right: 4px solid var(--gold-color); display: flex; align-items: center; gap: 10px; font-weight: 600; animation: slideUp 0.3s ease-out; }
         .toast.error { border-right-color: var(--danger-color); }
 
-        /* ============ تنسيق الصور في التعليقات والدردشة ============ */
         .comment-img, .msg-img { 
-            max-width: 150px; 
-            max-height: 150px; 
-            object-fit: cover; 
-            border-radius: 10px; 
-            margin-top: 8px; 
-            cursor: pointer; 
-            display: block; 
-            transition: transform 0.2s; 
-            border: 1px solid var(--border-color); 
+            max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 10px; 
+            margin-top: 8px; cursor: pointer; display: block; transition: transform 0.2s; border: 1px solid var(--border-color); 
         }
         .comment-img:hover, .msg-img:hover { transform: scale(1.02); }
 
@@ -572,11 +564,14 @@
     }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function addLinkField(containerId, className, val = '') {
+    // ============ إصلاح صلاحيات حذف الروابط ============
+    function addLinkField(containerId, className, val = '', allowDelete = true) {
         const div = document.createElement('div');
         div.className = 'dynamic-field';
         div.style.marginBottom = '10px';
-        div.innerHTML = `<input type="url" class="${className}" value="${val}" placeholder="https://..." style="flex-grow: 1; margin: 0;"><button type="button" onclick="this.parentElement.remove()" class="btn-icon" style="background: var(--danger-color); color: white; border: none;">X</button>`;
+        const disabledAttr = allowDelete ? '' : 'disabled';
+        const deleteBtnHtml = allowDelete ? `<button type="button" onclick="this.parentElement.remove()" class="btn-icon" style="background: var(--danger-color); color: white; border: none; width: 40px;">X</button>` : '';
+        div.innerHTML = `<input type="url" class="${className}" value="${val}" placeholder="https://..." style="flex-grow: 1; margin: 0;" ${disabledAttr}>${deleteBtnHtml}`;
         document.getElementById(containerId).appendChild(div);
     }
 
@@ -654,8 +649,9 @@
         
         const rawLinks = Array.isArray(t.RawLinks) ? t.RawLinks : []; 
         const reviewLinks = Array.isArray(t.ReviewLinks) ? t.ReviewLinks : [];
-        rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link); });
-        reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link); });
+        // تمرير صلاحية التعديل (canEditDetails) لإخفاء أو إظهار زر الحذف
+        rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link, canEditDetails); });
+        reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link, canEditDetails); });
         
         document.getElementById('commentsList').innerHTML = boardData.comments.filter(c => c.TaskID === taskId).map(c => {
             let imgUrl = String(c.ImageURL || "");
