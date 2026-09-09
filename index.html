@@ -167,6 +167,20 @@
         .toast { background: var(--container-bg); color: var(--text-color); padding: 15px 25px; border-radius: 12px; box-shadow: var(--shadow-lg); border-right: 4px solid var(--gold-color); display: flex; align-items: center; gap: 10px; font-weight: 600; animation: slideUp 0.3s ease-out; }
         .toast.error { border-right-color: var(--danger-color); }
 
+        /* ============ تنسيق الصور في التعليقات والدردشة ============ */
+        .comment-img, .msg-img { 
+            max-width: 150px; 
+            max-height: 150px; 
+            object-fit: cover; 
+            border-radius: 10px; 
+            margin-top: 8px; 
+            cursor: pointer; 
+            display: block; 
+            transition: transform 0.2s; 
+            border: 1px solid var(--border-color); 
+        }
+        .comment-img:hover, .msg-img:hover { transform: scale(1.02); }
+
         @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideInLeft { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -643,13 +657,11 @@
         rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link); });
         reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link); });
         
-        // ============ إصلاح عرض صور التعليقات (Thumbnails) ============
         document.getElementById('commentsList').innerHTML = boardData.comments.filter(c => c.TaskID === taskId).map(c => {
-            // التحقق الذكي من رابط الصورة (نفس منطق الدردشة)
             let imgUrl = String(c.ImageURL || "");
             if (!imgUrl.startsWith('http')) {
                 let ts = String(c.Timestamp || "");
-                if (ts.startsWith('http')) imgUrl = ts; // Fallback for legacy data
+                if (ts.startsWith('http')) imgUrl = ts; 
             }
             let isImgValid = imgUrl.startsWith('http') && !imgUrl.includes('drive.google.com');
             
@@ -746,7 +758,6 @@
         };
     }
 
-    // ============ النقل والحذف عبر POST عادي (بدون no-cors) ============
     async function moveTask(taskId, newStatus) {
         closeModal('detailsModal');
         showToast('جاري تحديث الحالة...');
@@ -768,14 +779,10 @@
             const data = await res.json();
             
             if (data.status === 'success') {
-                // تحديث محلي فوري لضمان النقل البصري
                 const task = boardData.tasks.find(t => t.ID === taskId);
                 if (task) task.Status = newStatus;
                 renderTasks();
-                
                 showToast('تم تحديث الحالة بنجاح');
-                
-                // مزامنة مع الخادم بعد ثانيتين
                 setTimeout(() => {
                     fetchData(); 
                 }, 2500); 
