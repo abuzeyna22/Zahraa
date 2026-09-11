@@ -230,6 +230,7 @@
         <div class="nav-link" onclick="navigate('tasks', this)"><span>📋</span> <span class="hide-on-collapse">المهام</span></div>
         <div class="nav-link" onclick="navigate('chat', this)"><span>💬</span> <span class="hide-on-collapse">الدردشة</span></div>
         <div class="nav-link" id="adminUserNav" style="display: none;" onclick="openUserModal()"><span>👥</span> <span class="hide-on-collapse">إدارة المستخدمين</span></div>
+        <div class="nav-link" id="adminWaNav" style="display: none;" onclick="openWhatsAppNotifier()"><span>📱</span> <span class="hide-on-collapse">تنبيه واتساب</span></div>
         <div class="nav-link" onclick="navigate('settings', this)"><span>⚙️</span> <span class="hide-on-collapse">الإعدادات</span></div>
     </div>
     <button class="btn btn-danger logout-btn" onclick="logout()"><span class="hide-on-collapse">تسجيل الخروج</span><span class="show-on-collapse">🚪</span></button>
@@ -336,6 +337,25 @@
         <h3 id="detailsTitle" style="margin-bottom: 20px;"></h3>
         <div id="detailsBody" class="details-body"></div>
         <div class="modal-actions" id="detailsActions"></div>
+    </div>
+</div>
+
+<!-- WhatsApp Notifier Modal -->
+<div class="modal-overlay" id="whatsappModal" onclick="if(event.target === this) closeModal('whatsappModal')">
+    <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom: 20px;">📱 إرسال تنبيه واتساب</h3>
+        <div class="form-group">
+            <label>اختر المستخدم</label>
+            <select id="waUserSelect"></select>
+        </div>
+        <div class="form-group">
+            <label>رسالة التنبيه</label>
+            <textarea id="waMessage" rows="4" placeholder="اكتب رسالتك هنا..."></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeModal('whatsappModal')">إلغاء</button>
+            <button class="btn btn-success" onclick="sendWhatsApp()">إرسال عبر واتساب</button>
+        </div>
     </div>
 </div>
 
@@ -475,6 +495,7 @@
         document.getElementById('userAvatar').src = currentUser.Avatar || DEFAULT_AVATAR;
         document.getElementById('newNameInput').value = currentUser.Name;
         document.getElementById('adminUserNav').style.display = currentUser.Role === 'Admin' ? 'flex' : 'none';
+        document.getElementById('adminWaNav').style.display = currentUser.Role === 'Admin' ? 'flex' : 'none';
     }
 
     async function fetchData() {
@@ -564,14 +585,16 @@
     }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // ============ إصلاح صلاحيات حذف الروابط ============
     function addLinkField(containerId, className, val = '', allowDelete = true) {
         const div = document.createElement('div');
         div.className = 'dynamic-field';
         div.style.marginBottom = '10px';
         const disabledAttr = allowDelete ? '' : 'disabled';
+        
+        const openBtnHtml = `<button type="button" onclick="if(this.previousElementSibling.value) window.open(this.previousElementSibling.value, '_blank')" class="btn-icon" style="width: 40px; padding: 10px; box-shadow: var(--shadow-sm);">🔗</button>`;
         const deleteBtnHtml = allowDelete ? `<button type="button" onclick="this.parentElement.remove()" class="btn-icon" style="background: var(--danger-color); color: white; border: none; width: 40px;">X</button>` : '';
-        div.innerHTML = `<input type="url" class="${className}" value="${val}" placeholder="https://..." style="flex-grow: 1; margin: 0;" ${disabledAttr}>${deleteBtnHtml}`;
+        
+        div.innerHTML = `<input type="url" class="${className}" value="${val}" placeholder="https://..." style="flex-grow: 1; margin: 0;" ${disabledAttr}>${openBtnHtml}${deleteBtnHtml}`;
         document.getElementById(containerId).appendChild(div);
     }
 
@@ -649,7 +672,6 @@
         
         const rawLinks = Array.isArray(t.RawLinks) ? t.RawLinks : []; 
         const reviewLinks = Array.isArray(t.ReviewLinks) ? t.ReviewLinks : [];
-        // تمرير صلاحية التعديل (canEditDetails) لإخفاء أو إظهار زر الحذف
         rawLinks.forEach(link => { if(typeof link === 'string') addLinkField('editRawLinksContainer', 'editRawLinkInput', link, canEditDetails); });
         reviewLinks.forEach(link => { if(typeof link === 'string') addLinkField('editReviewLinksContainer', 'editReviewLinkInput', link, canEditDetails); });
         
@@ -676,6 +698,11 @@
         let actions = `<button class="btn btn-cancel" onclick="closeModal('detailsModal')">إغلاق</button>`;
         if (canEditDetails) actions += `<button class="btn btn-gold" onclick="saveTaskDetails('${t.ID}')">💾 حفظ</button>`;
         
+        // زر تنبيه واتساب يظهر للأدمن فقط داخل المهمة
+        if (currentUser.Role === 'Admin') {
+            actions += `<button class="btn btn-cancel" style="color: var(--success-color); border-color: var(--success-color);" onclick="openWhatsAppNotifier('${t.ID}')">📱 تنبيه واتساب</button>`;
+        }
+        
         const currentCol = STATUS_MAP[t.Status];
         if (currentUser.Role === 'Admin') {
             if (currentCol !== 1) actions += `<button class="btn btn-cancel" onclick="moveTask('${t.ID}', 'محتوى مطلوب')">↩️</button>`;
@@ -700,6 +727,37 @@
         
         document.getElementById('detailsActions').innerHTML = actions;
         document.getElementById('detailsModal').style.display = 'flex';
+    }
+
+    // ============ ميزة تنبيه الواتساب للأدمن ============
+    function openWhatsAppNotifier(taskId = null) {
+        const usersWithPhone = boardData.users.filter(u => u.Phone);
+        if(usersWithPhone.length === 0) {
+            showToast('لا يوجد مستخدمون مسجل لديهم أرقام واتساب', 'error');
+            return;
+        }
+        
+        const selectHtml = usersWithPhone.map(u => `<option value="${u.Phone}">${u.Name} (${u.Role})</option>`).join('');
+        document.getElementById('waUserSelect').innerHTML = selectHtml;
+        
+        let msg = "مرحباً، لديك إشعار عاجل من بوابة الزهراء.";
+        if(taskId) {
+            const t = boardData.tasks.find(x => x.ID === taskId);
+            if(t) msg = `مرحباً، بخصوص المهمة: "${t.Title}"، يرجى المراجعة العاجلة. شكراً.`;
+        }
+        document.getElementById('waMessage').value = msg;
+        
+        document.getElementById('whatsappModal').style.display = 'flex';
+    }
+
+    function sendWhatsApp() {
+        const phone = document.getElementById('waUserSelect').value.replace(/\D/g, ''); // إزالة أي شيء غير أرقام
+        const message = encodeURIComponent(document.getElementById('waMessage').value);
+        if(!phone) { showToast('رقم الهاتف غير صالح', 'error'); return; }
+        
+        window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+        closeModal('whatsappModal');
+        showToast('جاري فتح واتساب...');
     }
 
     async function saveTaskDetails(taskId) {
